@@ -1,0 +1,13 @@
+{
+  "multipart": [
+    { "when": { "axis": "x" },
+      "apply": { "model":  "roehrchen:block/pipe/glass_pipe", "y":  90, "uvlock": false }
+    },
+    { "when": { "axis": "y" },
+      "apply": { "model":  "roehrchen:block/pipe/glass_pipe", "x":  90, "uvlock": false }
+    },
+    { "when": { "axis": "z" },
+      "apply": { "model":  "roehrchen:block/pipe/glass_pipe", "uvlock": false }
+    }
+  ]
+}
