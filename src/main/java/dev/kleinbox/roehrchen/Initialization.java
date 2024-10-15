@@ -16,7 +16,7 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 @Mod(Initialization.MODID)
 public class Initialization {
     public static final String MODID = "roehrchen";
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     public Initialization(IEventBus modEventBus, ModContainer modContainer) {
         // Make Subscriber Events work

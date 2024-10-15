@@ -1,10 +1,10 @@
 {
 	"credit": "Sammy L. Koch | Made with Blockbench",
+	"render_type": "cutout",
 	"textures": {
 		"0": "roehrchen:block/pipe/glass_pipe",
 		"particle": "roehrchen:block/pipe/glass_pipe"
 	},
-	"render_type": "cutout",
 	"elements": [
 		{
 			"name": "inner",
@@ -32,7 +32,7 @@
 		},
 		{
 			"from": [4, 4, 0],
-			"to": [5, 12, 0],
+			"to": [5, 12, 0.05],
 			"rotation": {"angle": 45, "axis": "z", "origin": [8, 8, 0]},
 			"faces": {
 				"north": {"uv": [0, 0, 1, 1], "texture": "#0"},
@@ -41,7 +41,7 @@
 		},
 		{
 			"from": [5, 11, 0],
-			"to": [11, 12, 0],
+			"to": [11, 12, 0.05],
 			"rotation": {"angle": 45, "axis": "z", "origin": [8, 8, 0]},
 			"faces": {
 				"north": {"uv": [0, 0, 1, 1], "texture": "#0"},
@@ -50,7 +50,7 @@
 		},
 		{
 			"from": [11, 4, 0],
-			"to": [12, 12, 0],
+			"to": [12, 12, 0.05],
 			"rotation": {"angle": 45, "axis": "z", "origin": [8, 8, 0]},
 			"faces": {
 				"north": {"uv": [0, 0, 1, 1], "texture": "#0"},
@@ -59,7 +59,7 @@
 		},
 		{
 			"from": [5, 4, 0],
-			"to": [11, 5, 0],
+			"to": [11, 5, 0.05],
 			"rotation": {"angle": 45, "axis": "z", "origin": [8, 8, 0]},
 			"faces": {
 				"north": {"uv": [0, 0, 1, 1], "texture": "#0"},
@@ -67,7 +67,7 @@
 			}
 		},
 		{
-			"from": [4, 4, 16],
+			"from": [4, 4, 15.975],
 			"to": [5, 12, 16],
 			"rotation": {"angle": 45, "axis": "z", "origin": [8, 8, 16]},
 			"faces": {
@@ -76,7 +76,7 @@
 			}
 		},
 		{
-			"from": [5, 11, 16],
+			"from": [5, 11, 15.975],
 			"to": [11, 12, 16],
 			"rotation": {"angle": 45, "axis": "z", "origin": [8, 8, 16]},
 			"faces": {
@@ -85,7 +85,7 @@
 			}
 		},
 		{
-			"from": [11, 4, 16],
+			"from": [11, 4, 15.975],
 			"to": [12, 12, 16],
 			"rotation": {"angle": 45, "axis": "z", "origin": [8, 8, 16]},
 			"faces": {
@@ -94,7 +94,7 @@
 			}
 		},
 		{
-			"from": [5, 4, 16],
+			"from": [5, 4, 15.975],
 			"to": [11, 5, 16],
 			"rotation": {"angle": 45, "axis": "z", "origin": [8, 8, 16]},
 			"faces": {
