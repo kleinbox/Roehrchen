@@ -19,6 +19,64 @@
     },
     { "when": { "end_1": "down", "end_2": "up" },
       "apply": { "model":  "roehrchen:block/pipe/straight_glass_pipe", "x":  90, "uvlock": false }
+    },
+
+
+    { "when": { "end_1": "south", "end_2": "east" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "y":  180, "uvlock": false }
+    },
+    { "when": { "end_1": "east", "end_2": "south" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "y":  180, "uvlock": false }
+    },
+
+    { "when": { "end_1": "south", "end_2": "west" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "y":  270, "uvlock": false }
+    },
+    { "when": { "end_1": "west", "end_2": "south" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "y":  270, "uvlock": false }
+    },
+
+    { "when": { "end_1": "south", "end_2": "down" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "x":  90, "y":  270, "uvlock": false }
+    },
+    { "when": { "end_1": "down", "end_2": "south" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "x":  90, "y":  270, "uvlock": false }
+    },
+
+    { "when": { "end_1": "south", "end_2": "up" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "x":  270, "y":  270, "uvlock": false }
+    },
+    { "when": { "end_1": "up", "end_2": "south" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "x":  270, "y":  270, "uvlock": false }
+    },
+
+
+    { "when": { "end_1": "north", "end_2": "east" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "y":  90, "uvlock": false }
+    },
+    { "when": { "end_1": "east", "end_2": "north" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "y":  90, "uvlock": false }
+    },
+
+    { "when": { "end_1": "north", "end_2": "west" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "y":  0, "uvlock": false }
+    },
+    { "when": { "end_1": "west", "end_2": "north" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "y":  0, "uvlock": false }
+    },
+
+    { "when": { "end_1": "north", "end_2": "down" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "x":  90, "y":  90, "uvlock": false }
+    },
+    { "when": { "end_1": "down", "end_2": "north" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "x":  90, "y":  90, "uvlock": false }
+    },
+
+    { "when": { "end_1": "north", "end_2": "up" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "x":  270, "y":  90, "uvlock": false }
+    },
+    { "when": { "end_1": "up", "end_2": "north" },
+      "apply": { "model":  "roehrchen:block/pipe/turning_glass_pipe", "x":  270, "y":  90, "uvlock": false }
     }
   ]
 }
