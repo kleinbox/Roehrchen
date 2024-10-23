@@ -1,5 +1,8 @@
 package dev.kleinbox.roehrchen;
 
+import dev.kleinbox.roehrchen.core.GlassPipeNetwork;
+import net.minecraft.server.level.ServerChunkCache;
+import net.neoforged.neoforge.common.NeoForge;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -19,14 +22,16 @@ public class Initialization {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public Initialization(IEventBus modEventBus, ModContainer modContainer) {
-        // Make Subscriber Events work
-        //NeoForge.EVENT_BUS.register(this);
-
+        // Register features
         Registries.BLOCKS.register(modEventBus);
         Registries.ITEMS.register(modEventBus);
 
-        // Register our mod's ModConfigSpec so that FML can create and load the config file for us
+        // Register ModConfigSpec
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+
+        // Networks
+        GlassPipeNetwork glassPipeNetwork = new GlassPipeNetwork();
+        NeoForge.EVENT_BUS.register(glassPipeNetwork);
     }
 
     @EventBusSubscriber(modid = MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)

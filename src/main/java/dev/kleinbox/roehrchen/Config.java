@@ -16,6 +16,9 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
+    // TODO: Configuration for how many transactions a chunk can have. If the limit is reached, all further
+    //  transactions will wait until there is enough space again.
+
     //private static final ModConfigSpec.BooleanValue LOG_DIRT_BLOCK = BUILDER
     //        .comment("Whether to log the dirt block on common setup")
     //        .define("logDirtBlock", true);
