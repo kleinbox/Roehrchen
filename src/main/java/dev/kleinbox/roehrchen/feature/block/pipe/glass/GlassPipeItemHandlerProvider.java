@@ -76,8 +76,13 @@ public class GlassPipeItemHandlerProvider implements IItemHandler {
         if (amount < stackInSlot.getCount()) {
             // So remember when I said we do not modify transaction?
             // Uh, yeah... To ensure compatibility, I guess we make a small exception here.
-            if (!simulate)
-                stackInSlot.setCount(stackInSlot.getCount()-amount);
+            if (!simulate) {
+                int count = stackInSlot.getCount() - amount;
+                if (count <= 0)
+                    count = stackInSlot.getCount();
+
+                stackInSlot.setCount(count);
+            }
 
             return stackInSlot.copyWithCount(amount);
         }
