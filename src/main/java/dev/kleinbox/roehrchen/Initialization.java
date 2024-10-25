@@ -1,7 +1,6 @@
 package dev.kleinbox.roehrchen;
 
-import dev.kleinbox.roehrchen.core.GlassPipeNetwork;
-import net.minecraft.server.level.ServerChunkCache;
+import dev.kleinbox.roehrchen.feature.block.pipe.glass.GlassPipeNetwork;
 import net.neoforged.neoforge.common.NeoForge;
 import org.slf4j.Logger;
 
@@ -22,8 +21,13 @@ public class Initialization {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public Initialization(IEventBus modEventBus, ModContainer modContainer) {
+        //NeoForge.EVENT_BUS.register(ClientModEvents.class);
+        modEventBus.addListener(Registries::registerCapabilities);
+
         // Register features
+        Registries.ATTACHMENT_TYPES.register(modEventBus);
         Registries.BLOCKS.register(modEventBus);
+        Registries.BLOCK_ENTITY_TYPES.register(modEventBus);
         Registries.ITEMS.register(modEventBus);
 
         // Register ModConfigSpec

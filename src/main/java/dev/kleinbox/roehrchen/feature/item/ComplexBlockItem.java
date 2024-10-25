@@ -1,4 +1,4 @@
-package dev.kleinbox.roehrchen.core;
+package dev.kleinbox.roehrchen.feature.item;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;

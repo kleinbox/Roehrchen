@@ -1,4 +1,4 @@
-package dev.kleinbox.roehrchen.core;
+package dev.kleinbox.roehrchen.feature.block;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
