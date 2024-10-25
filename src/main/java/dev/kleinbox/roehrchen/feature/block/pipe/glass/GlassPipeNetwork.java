@@ -47,14 +47,14 @@ public class GlassPipeNetwork {
         Level level = event.getLevel();
         ChunkTransactionsSavedData chunkTransactions = ChunkTransactionsSavedData.getFromLevel(level);
 
-        chunkTransactions.watchlist.parallelStream().forEach(chunkPos -> {
+        for (ChunkPos chunkPos : chunkTransactions.watchlist) {
             LevelChunk chunk = level.getChunk(chunkPos.x, chunkPos.z);
             HashSet<BlockPos> pipes = chunk.getData(WATCHED_GLASS_PIPES);
 
-            pipes.parallelStream().forEach(blockPos -> {
+            for (BlockPos pipe : pipes) {
                 // TODO: Pipe logic
-            });
-        });
+            }
+        }
     }
 
     @SubscribeEvent
