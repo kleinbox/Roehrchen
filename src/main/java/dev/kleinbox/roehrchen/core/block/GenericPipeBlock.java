@@ -1,4 +1,4 @@
-package dev.kleinbox.roehrchen.feature.block;
+package dev.kleinbox.roehrchen.core.block;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
@@ -18,10 +18,12 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * This abstract block ensures the same logic for all pipes.
+ */
 public abstract class GenericPipeBlock extends Block {
     public static final EnumProperty<Direction> END_1 = EnumProperty.create("end_1", Direction.class);
     public static final EnumProperty<Direction> END_2 = EnumProperty.create("end_2", Direction.class);
@@ -30,13 +32,11 @@ public abstract class GenericPipeBlock extends Block {
         super(properties);
         this.registerDefaultState(this.defaultBlockState()
                 .setValue(END_1, Direction.NORTH)
-                .setValue(END_2, Direction.SOUTH)
-        );
+                .setValue(END_2, Direction.SOUTH));
     }
 
     /**
-     * Returns the pipe next pipe of the given block position
-     * where the side determines the direction to go.
+     * Returns the next pipe relative to the given block position.
      *
      * @param level The level to get the BlockStates from.
      * @param pos Block position of the current pipe _(does not have to be a pipe actually)_.
@@ -49,9 +49,8 @@ public abstract class GenericPipeBlock extends Block {
         BlockPos neighborPos = pos.relative(side);
         BlockState neighbor = level.getBlockState(neighborPos);
 
-        if (neighbor.getBlock() == this) {
+        if (neighbor.getBlock() == this)
             return neighborPos;
-        }
 
         return null;
     }
@@ -67,8 +66,7 @@ public abstract class GenericPipeBlock extends Block {
     public Pair<Direction, Direction> getConnectors(BlockState state) {
         return new Pair<>(
                 state.getValue(END_1),
-                state.getValue(END_2)
-        );
+                state.getValue(END_2));
     }
 
     /**
@@ -89,6 +87,8 @@ public abstract class GenericPipeBlock extends Block {
 
         return end_1;
     }
+
+    // Block related methods ///////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
     protected @NotNull VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos,
@@ -128,27 +128,26 @@ public abstract class GenericPipeBlock extends Block {
     }
 
     @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        Level level = context.getLevel();
-        BlockPos pos = context.getClickedPos();
+    protected void onPlace(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
+                           @NotNull BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, level, pos, oldState, movedByPiston);
 
-        // Orientation of this pipe.
-        Direction end_1 = context.getClickedFace();
-        Direction end_2 = end_1.getOpposite();
+        if (movedByPiston)
+            return;
 
-        // TODO: The following block does not belong in getStateForPlacement
-        //       should be moved to... updateShape I think?
+        Pair<Direction, Direction> connectors = getConnectors(state);
 
         // We need to check the environment for other pipes and bend those towards us, if possible.
         // We are checking for each end if it is free and bend one of them.
-        for (Direction direction : Arrays.asList(end_1, end_2)) {
+        for (Direction direction : new Direction[]{connectors.getFirst(), connectors.getSecond()}) {
             BlockPos neighborPos = getNextPipeFrom(level, pos, direction);
             if (neighborPos == null)
                 continue;
 
             // Found a pipe in this pipes way.
-            BlockState neighbor = context.getLevel().getBlockState(neighborPos);
+            BlockState neighbor = level.getBlockState(neighborPos);
 
+            // Check which connectors are free to bend.
             List<EnumProperty<Direction>> ends = Arrays.asList(END_1, END_2);
             for (int i = 0; i<=1; i++) {
                 Direction neighborsDirection = neighbor.getValue(ends.get(i));
@@ -168,6 +167,16 @@ public abstract class GenericPipeBlock extends Block {
                 break;
             }
         }
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+
+        // Orientation of this pipe.
+        Direction end_1 = context.getClickedFace();
+        Direction end_2 = end_1.getOpposite();
 
         return this.defaultBlockState()
                 .setValue(END_1, end_1)

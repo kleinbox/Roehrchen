@@ -1,20 +1,19 @@
 package dev.kleinbox.roehrchen;
 
 import com.mojang.serialization.Codec;
-import dev.kleinbox.roehrchen.feature.block.pipe.glass.GlassPipeItemHandlerProvider;
-import dev.kleinbox.roehrchen.feature.item.ComplexBlockItem;
-import dev.kleinbox.roehrchen.feature.block.pipe.glass.GlassPipeBlockEntity;
+import dev.kleinbox.roehrchen.api.RoehrchenRegistries;
+import dev.kleinbox.roehrchen.api.Transaction;
+import dev.kleinbox.roehrchen.api.TransactionHandler;
+import dev.kleinbox.roehrchen.core.Register;
+import dev.kleinbox.roehrchen.core.Register.Registered;
+import dev.kleinbox.roehrchen.core.tracker.transaction.ItemTransaction;
 import dev.kleinbox.roehrchen.feature.block.pipe.glass.GlassPipeBlock;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
+import dev.kleinbox.roehrchen.feature.block.pipe.glass.GlassPipeIntermediaryHandler;
+import dev.kleinbox.roehrchen.feature.item.ComplexBlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
-import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
@@ -22,42 +21,46 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.function.Supplier;
 
-import static dev.kleinbox.roehrchen.Initialization.MODID;
+import static dev.kleinbox.roehrchen.Roehrchen.MOD_ID;
 
 public class Registries {
-    protected static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, MODID);
+    private static final DeferredRegister<Transaction<?, ?>> TRANSACTIONS = DeferredRegister.create(RoehrchenRegistries.TRANSACTION_REGISTRY, MOD_ID);
+    private static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, MOD_ID);
 
-    protected static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(BuiltInRegistries.BLOCK, MODID);
-    protected static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES  = DeferredRegister.create(BuiltInRegistries.BLOCK_ENTITY_TYPE, MODID);
-    protected static final DeferredRegister<Item> ITEMS = DeferredRegister.create(BuiltInRegistries.ITEM, MODID);
+    public final Supplier<ItemTransaction> ITEM_TRANSACTION;
+    public final Supplier<AttachmentType<HashSet<Transaction<?,?>>>> WATCHED_GLASS_PIPES;
+    public final Registered GLASS_PIPE;
+
+    public Registries() {
+        this.ITEM_TRANSACTION = TRANSACTIONS.register(
+                "item",
+                ItemTransaction::new
+        );
+
+        this.WATCHED_GLASS_PIPES = ATTACHMENT_TYPES.register(
+                "watched_glass_pipes",
+                () -> AttachmentType.<HashSet<Transaction<?, ?>>>builder(() -> new HashSet<>())
+                        .serialize(Codec.list(Transaction.CODEC).xmap(HashSet::new, ArrayList::new))
+                        .build()
+        );
+
+        this.GLASS_PIPE = new Register("glass_pipe")
+                .block(GlassPipeBlock::new)
+                .item((block) -> new ComplexBlockItem<>(block, new Item.Properties()))
+                .build();
+    }
 
     protected static void registerCapabilities(RegisterCapabilitiesEvent event) {
-        event.registerBlockEntity(
-                Capabilities.ItemHandler.BLOCK,
-                GLASS_PIPE_BLOCK_ENTITY.get(),
-                GlassPipeItemHandlerProvider::requestCapability
+        event.registerBlock(
+                TransactionHandler.TRANSACTION_HANDLER_BLOCK,
+                (level, pos, state, be, side) -> GlassPipeIntermediaryHandler.create(level, pos, state, side)
+
         );
     }
 
-    public static final Supplier<AttachmentType<HashSet<BlockPos>>> WATCHED_GLASS_PIPES = ATTACHMENT_TYPES.register(
-            "watched_glass_pipes",
-            () -> AttachmentType.<HashSet<BlockPos>>builder(() -> new HashSet<>())
-                    .serialize(Codec.list(BlockPos.CODEC).xmap(HashSet::new, ArrayList::new))
-                    .build()
-    );
-
-    public static final DeferredHolder<Block, GlassPipeBlock> GLASS_PIPE_BLOCK = BLOCKS.register(
-            "glass_pipe",
-            GlassPipeBlock::new
-    );
-
-    public static final Supplier<BlockEntityType<GlassPipeBlockEntity>> GLASS_PIPE_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(
-            "glass_pipe_block_entity",
-            () -> BlockEntityType.Builder.of(GlassPipeBlockEntity::new, GLASS_PIPE_BLOCK.get()).build(null)
-    );
-
-    public static final DeferredHolder<Item, ComplexBlockItem<GlassPipeBlock>> GLASS_PIPE_ITEM = ITEMS.register(
-            "glass_pipe",
-            () -> new ComplexBlockItem<>(Registries.GLASS_PIPE_BLOCK.get(), new Item.Properties())
-    );
+    protected static void registerToBus(IEventBus modEventBus) {
+        Register.register(modEventBus);
+        TRANSACTIONS.register(modEventBus);
+        ATTACHMENT_TYPES.register(modEventBus);
+    }
 }
