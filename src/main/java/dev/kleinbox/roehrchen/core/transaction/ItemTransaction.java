@@ -1,4 +1,4 @@
-package dev.kleinbox.roehrchen.core.tracker.transaction;
+package dev.kleinbox.roehrchen.core.transaction;
 
 import com.mojang.serialization.Codec;
 import dev.kleinbox.roehrchen.api.Transaction;
@@ -10,7 +10,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
-import org.jetbrains.annotations.Nullable;
 
 import static dev.kleinbox.roehrchen.Roehrchen.MOD_ID;
 
@@ -23,23 +22,11 @@ public class ItemTransaction extends Transaction<ItemStack, ItemTransaction> {
         this.leaving = leaving;
     }
 
-    public ItemTransaction() {
-
-    }
+    public ItemTransaction() { }
 
     @Override
-    @Nullable
-    public ItemTransaction with(Object product, Direction origin, BlockPos blockPos, boolean leaving) {
-        if (!(product instanceof ItemStack item))
-            return null;
-        ItemTransaction transaction = new ItemTransaction();
-
-        transaction.product = item;
-        transaction.origin = origin;
-        transaction.blockPos = blockPos;
-        transaction.leaving = leaving;
-
-        return transaction;
+    public ItemTransaction createEmpty() {
+        return new ItemTransaction();
     }
 
     @Override

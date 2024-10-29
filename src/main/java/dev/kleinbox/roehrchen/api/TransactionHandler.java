@@ -1,5 +1,6 @@
 package dev.kleinbox.roehrchen.api;
 
+import dev.kleinbox.roehrchen.core.transaction.tracker.TransactionTracker;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.capabilities.BlockCapability;
@@ -9,7 +10,7 @@ import static dev.kleinbox.roehrchen.Roehrchen.MOD_ID;
 
 /**
  * <p>Blocks implementing this interface will be used by the
- * {@link dev.kleinbox.roehrchen.core.tracker.TransactionTracker}.</p>
+ * {@link TransactionTracker}.</p>
  */
 public interface TransactionHandler {
     BlockCapability<TransactionHandler, @Nullable Direction> TRANSACTION_HANDLER_BLOCK =

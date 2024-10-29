@@ -3,7 +3,7 @@ package dev.kleinbox.roehrchen;
 import com.mojang.logging.LogUtils;
 import dev.kleinbox.roehrchen.api.RoehrchenRegistries;
 import dev.kleinbox.roehrchen.core.Config;
-import dev.kleinbox.roehrchen.core.tracker.TransactionTracker;
+import dev.kleinbox.roehrchen.core.transaction.tracker.TransactionTracker;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -30,8 +30,7 @@ public class Roehrchen {
         modEventBus.addListener(Registries::registerCapabilities);
         //NeoForge.EVENT_BUS.register(ClientModEvents.class);
 
-        TransactionTracker glassPipeNetwork = new TransactionTracker();
-        NeoForge.EVENT_BUS.register(glassPipeNetwork);
+        NeoForge.EVENT_BUS.register(new TransactionTracker());
     }
 
     @EventBusSubscriber(modid = MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)

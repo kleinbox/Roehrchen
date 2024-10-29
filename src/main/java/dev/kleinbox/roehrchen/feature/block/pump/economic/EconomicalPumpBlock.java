@@ -1,15 +1,13 @@
 package dev.kleinbox.roehrchen.feature.block.pump.economic;
 
-import dev.kleinbox.roehrchen.Roehrchen;
-import dev.kleinbox.roehrchen.core.tracker.TransactionTracker;
-import dev.kleinbox.roehrchen.core.tracker.transaction.ItemTransaction;
+import dev.kleinbox.roehrchen.core.transaction.tracker.TransactionTracker;
+import dev.kleinbox.roehrchen.core.transaction.ItemTransaction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -68,7 +66,7 @@ public class EconomicalPumpBlock extends Block {
                 }
             }
 
-            if (item != null && !item.isEmpty())
+            if (!item.isEmpty())
                 TransactionTracker.registerTransaction(level, new ItemTransaction(
                         item, front, pos, false
                 ));

@@ -1,19 +1,18 @@
 package dev.kleinbox.roehrchen;
 
-import com.mojang.serialization.Codec;
 import dev.kleinbox.roehrchen.api.RoehrchenRegistries;
 import dev.kleinbox.roehrchen.api.Transaction;
 import dev.kleinbox.roehrchen.api.TransactionHandler;
 import dev.kleinbox.roehrchen.core.Register;
 import dev.kleinbox.roehrchen.core.Register.Registered;
-import dev.kleinbox.roehrchen.core.tracker.transaction.ItemTransaction;
+import dev.kleinbox.roehrchen.core.transaction.ItemTransaction;
+import dev.kleinbox.roehrchen.core.transaction.tracker.ChunkTransactionsAttachment;
 import dev.kleinbox.roehrchen.feature.block.pipe.glass.GlassPipeBlock;
 import dev.kleinbox.roehrchen.feature.block.pipe.glass.GlassPipeIntermediaryHandler;
 import dev.kleinbox.roehrchen.feature.block.pump.economic.EconomicalPumpBlock;
 import dev.kleinbox.roehrchen.feature.block.pump.economic.EconomicalPumpIntermediaryHandler;
 import dev.kleinbox.roehrchen.feature.item.ComplexBlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.attachment.AttachmentType;
@@ -21,7 +20,6 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.function.Supplier;
 
@@ -33,7 +31,7 @@ public class Registries {
 
     // Core
     public final Supplier<ItemTransaction> ITEM_TRANSACTION;
-    public final Supplier<AttachmentType<HashSet<Transaction<?,?>>>> WATCHED_GLASS_PIPES;
+    public final Supplier<AttachmentType<ChunkTransactionsAttachment>> CHUNK_TRANSACTIONS;
 
     // Feature
     public final Registered GLASS_PIPE;
@@ -45,11 +43,9 @@ public class Registries {
                 ItemTransaction::new
         );
 
-        this.WATCHED_GLASS_PIPES = ATTACHMENT_TYPES.register(
-                "watched_glass_pipes",
-                () -> AttachmentType.<HashSet<Transaction<?, ?>>>builder(() -> new HashSet<>())
-                        .serialize(Codec.list(Transaction.CODEC).xmap(HashSet::new, ArrayList::new))
-                        .build()
+        this.CHUNK_TRANSACTIONS = ATTACHMENT_TYPES.register(
+                "chunk_transactions",
+                () -> AttachmentType.serializable(ChunkTransactionsAttachment::new).build()
         );
 
         this.GLASS_PIPE = new Register("glass_pipe")

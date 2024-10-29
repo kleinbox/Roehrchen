@@ -1,18 +1,20 @@
 package dev.kleinbox.roehrchen.api;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
-import com.mojang.serialization.JsonOps;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-import dev.kleinbox.roehrchen.core.tracker.TransactionTracker;
+import dev.kleinbox.roehrchen.core.transaction.tracker.TransactionTracker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
+import net.neoforged.neoforge.common.util.INBTSerializable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.UnknownNullability;
 
 /**
  * <p>A transaction can be anything that is traveling through the world and has
@@ -38,37 +40,7 @@ import org.jetbrains.annotations.Nullable;
  * @param <P> The product that is being transferred.
  * @param <T> Self reference.
  */
-public abstract class Transaction<P, T extends Transaction<P, T>> {
-    public static Codec<Transaction<?, ?>> CODEC = RecordCodecBuilder.create(instance ->
-            instance.group(
-                    ResourceLocation.CODEC.fieldOf("type").forGetter(Transaction::type),
-                    Codec.STRING.fieldOf("product").forGetter(Transaction::serializeProduct),
-                    Direction.CODEC.fieldOf("origin").forGetter(t -> t.origin),
-                    BlockPos.CODEC.fieldOf("blockPos").forGetter(t -> t.blockPos),
-                    Codec.BOOL.fieldOf("leaving").forGetter(t -> t.leaving)
-            ).apply(instance, (Transaction::load))
-    );
-
-    private static Transaction<?, ?> load(ResourceLocation type, String serializedProduct, Direction origin,
-                                          BlockPos blockPos, Boolean leaving) {
-        Transaction<?, ?> transaction = RoehrchenRegistries.TRANSACTION_REGISTRY.get(type);
-        if (transaction == null)
-            return null;
-
-        Codec<?> codec = transaction.codec();
-
-        JsonElement json = JsonParser.parseString(serializedProduct);
-        DataResult<? extends Pair<?, JsonElement>> result = codec.decode(JsonOps.COMPRESSED, json);
-
-        return transaction.with(result.getOrThrow().getFirst(), origin, blockPos, leaving);
-    }
-
-    private static <SHARED> String serializeProduct(Transaction<SHARED, ?> transaction) {
-        Codec<SHARED> codec = transaction.codec();
-        DataResult<JsonElement> result = codec.encodeStart(JsonOps.COMPRESSED, transaction.product);
-
-        return result.getOrThrow().getAsString();
-    }
+public abstract class Transaction<P, T extends Transaction<P, T>> implements INBTSerializable<CompoundTag> {
 
     public P product;
     public Direction origin;
@@ -81,15 +53,10 @@ public abstract class Transaction<P, T extends Transaction<P, T>> {
     public Transaction() {}
 
     /**
-     * Tries to create a new instance.
-     *
-     * @param potentialProduct The product to transfer.
-     * @param origin The direction it came from.
-     * @param blockPos The position in the world.
-     * @param leaving Whenever the product is inside the block or about to leave.
+     * Creates a new and empty instance.
+     * Used during serialization where the class is unknown.
      */
-    @Nullable
-    public abstract T with(Object potentialProduct, Direction origin, BlockPos blockPos, boolean leaving);
+    public abstract T createEmpty();
 
     /**
      * Will be called when the transaction reaches
@@ -112,4 +79,27 @@ public abstract class Transaction<P, T extends Transaction<P, T>> {
     public abstract ResourceLocation type();
 
     public abstract Codec<P> codec();
+
+    @Override
+    public final @UnknownNullability CompoundTag serializeNBT(HolderLookup.@NotNull Provider provider) {
+        CompoundTag data = new CompoundTag();
+        DataResult<Tag> result = codec().encodeStart(NbtOps.INSTANCE, product);
+
+        data.put("product", result.getOrThrow());
+        data.putString("origin", origin.toString());
+        data.putIntArray("blockPos", new int[]{blockPos.getX(), blockPos.getY(), blockPos.getZ()});
+        data.putBoolean("leaving", leaving);
+
+        return data;
+    }
+
+    @Override
+    public final void deserializeNBT(HolderLookup.@NotNull Provider provider, @NotNull CompoundTag data) {
+        DataResult<Pair<P, Tag>> result = codec().decode(NbtOps.INSTANCE, data.get("product"));
+        product = result.getOrThrow().getFirst();
+        origin = Direction.byName(data.getString("origin"));
+        int[] posArray = data.getIntArray("blockPos");
+        blockPos = new BlockPos(posArray[0], posArray[1], posArray[2]);
+        leaving = data.getBoolean("leaving");
+    }
 }

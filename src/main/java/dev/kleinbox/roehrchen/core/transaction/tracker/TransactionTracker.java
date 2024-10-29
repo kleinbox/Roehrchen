@@ -1,4 +1,4 @@
-package dev.kleinbox.roehrchen.core.tracker;
+package dev.kleinbox.roehrchen.core.transaction.tracker;
 
 import com.mojang.datafixers.util.Pair;
 import dev.kleinbox.roehrchen.api.Transaction;
@@ -24,25 +24,28 @@ import static dev.kleinbox.roehrchen.Roehrchen.LOGGER;
 import static dev.kleinbox.roehrchen.Roehrchen.REGISTERED;
 
 /**
- * Keeps track of all pipes that need to be processed in level.
+ * <p>Keeps track of all pipes that need to be processed in level.
  * We are doing this to save on a bit of performance in case our pipes are being used as decorations (this way, we do
- * not tick them).
+ * not tick them).</p>
  *
- * It only is a small performance boost, though.
+ * <p>It only is a small performance boost, though.</p>
  */
 public class TransactionTracker {
     @SubscribeEvent
-    public void onLevelTick(LevelTickEvent.Pre event) {
+    public void onLevelTick(LevelTickEvent.Post event) {
         Level level = event.getLevel();
 
         ArrayList<Pair<Transaction<?,?>, LevelChunk>> relocate = new ArrayList<>();
+        ArrayList<ChunkPos> removedChunks = new ArrayList<>();
 
-        ChunkTransactionsSavedData chunkTransactions = ChunkTransactionsSavedData.getFromLevel(level);
+        LevelTransactionChunksSD chunkTransactions = LevelTransactionChunksSD.getFromLevel(level);
         for (ChunkPos chunkPos : chunkTransactions.watchlist) {
             // Check each chunk
             LevelChunk chunk = level.getChunk(chunkPos.x, chunkPos.z);
-            HashSet<Transaction<?, ?>> transactions = chunk.getData(REGISTERED.WATCHED_GLASS_PIPES);
-
+            ChunkTransactionsAttachment transactions = chunk.getData(REGISTERED.CHUNK_TRANSACTIONS);
+            
+            ArrayList<Transaction<?, ?>> removedTransactions = new ArrayList<>();
+            
             for (Transaction<?, ?> transaction : transactions) {
                 // Check each transaction in chunk
                 TransactionHandler capability = level.getCapability(
@@ -55,7 +58,7 @@ public class TransactionTracker {
                     if (!transaction.unwind(level))
                         transaction.terminate(level);
 
-                    transactions.remove(transaction);
+                    removedTransactions.add(transaction);
                 } else {
                     if (!transaction.leaving) {
                         // Tiny step within same block
@@ -69,13 +72,13 @@ public class TransactionTracker {
                     if (!capability.request(transaction) || next == null) {
                         // Capability refuses to take the transaction
                         transaction.terminate(level);
-                        transactions.remove(transaction);
+                        removedTransactions.add(transaction);
                         chunk.setUnsaved(true);
                         continue;
                     }
 
                     // Move transaction one step
-                    transaction.origin = next;
+                    transaction.origin = next.getOpposite();
                     transaction.blockPos = transaction.blockPos.relative(next);
                     transaction.leaving = false;
 
@@ -86,10 +89,14 @@ public class TransactionTracker {
 
                 chunk.setUnsaved(true);
             }
+            
+            for (Transaction<?,?> transaction : removedTransactions) {
+            	transactions.remove(transaction);
+            	// We already marked the chunk as unsaved from the loop before
+            }
 
             if (transactions.isEmpty())
-                if (chunkTransactions.watchlist.remove(chunkPos))
-                    chunkTransactions.setDirty();
+            	removedChunks.add(chunkPos);
         }
 
         // Relocate all transactions that changed chunks
@@ -97,7 +104,7 @@ public class TransactionTracker {
             Transaction<?, ?> transaction = data.getFirst();
 
             LevelChunk oldChunk = data.getSecond();
-            HashSet<Transaction<?, ?>> oldTransactions = oldChunk.getData(REGISTERED.WATCHED_GLASS_PIPES);
+            ChunkTransactionsAttachment oldTransactions = oldChunk.getData(REGISTERED.CHUNK_TRANSACTIONS);
             oldTransactions.remove(transaction);
             //oldChunk.setUnsaved(true); // We already marked the chunk
 
@@ -106,12 +113,18 @@ public class TransactionTracker {
                     chunkTransactions.setDirty();
 
             ChunkAccess newChunk = level.getChunk(transaction.blockPos);
-            HashSet<Transaction<?, ?>> newTransactions = newChunk.getData(REGISTERED.WATCHED_GLASS_PIPES);
+            ChunkTransactionsAttachment newTransactions = newChunk.getData(REGISTERED.CHUNK_TRANSACTIONS);
             newTransactions.add(transaction);
             newChunk.setUnsaved(true); // This one maybe not yet
 
             // Make sure to watch it too now
             if(chunkTransactions.watchlist.add(newChunk.getPos()))
+                chunkTransactions.setDirty();
+        }
+        
+        // Remove chunks
+        for (ChunkPos chunkPos : removedChunks) {
+        	if (chunkTransactions.watchlist.remove(chunkPos))
                 chunkTransactions.setDirty();
         }
     }
@@ -131,7 +144,7 @@ public class TransactionTracker {
     @SubscribeEvent
     public void onChunkUnloaded(ChunkEvent.Unload event) {
         ChunkAccess chunk = event.getChunk();
-        ChunkTransactionsSavedData chunkTransactions = ChunkTransactionsSavedData.getFromLevel(chunk.getLevel());
+        LevelTransactionChunksSD chunkTransactions = LevelTransactionChunksSD.getFromLevel(chunk.getLevel());
 
         if (chunkTransactions.watchlist.remove(chunk.getPos()))
             chunkTransactions.setDirty();
@@ -147,7 +160,7 @@ public class TransactionTracker {
      */
     public static void registerTransaction(Level level, Transaction<?, ?> transaction) {
         ChunkAccess chunk = level.getChunk(transaction.blockPos);
-        HashSet<Transaction<?, ?>> data = chunk.getData(REGISTERED.WATCHED_GLASS_PIPES);
+        ChunkTransactionsAttachment data = chunk.getData(REGISTERED.CHUNK_TRANSACTIONS);
 
         data.add(transaction);
         chunk.setUnsaved(true);
@@ -163,77 +176,21 @@ public class TransactionTracker {
      * @param chunk The chunk that needs to be ticked.
      */
     private static void makeLevelAwareOfChunk(ChunkAccess chunk) {
-        if (!chunk.hasData(REGISTERED.WATCHED_GLASS_PIPES))
+        if (!chunk.hasData(REGISTERED.CHUNK_TRANSACTIONS))
             return;
 
-        HashSet<Transaction<?, ?>> transactions = chunk.getData(REGISTERED.WATCHED_GLASS_PIPES);
+        ChunkTransactionsAttachment transactions = chunk.getData(REGISTERED.CHUNK_TRANSACTIONS);
         if (transactions.isEmpty())
             return;
 
         ChunkPos chunkPos = chunk.getPos();
         Level level = chunk.getLevel();
 
-        ChunkTransactionsSavedData chunkTransactions = ChunkTransactionsSavedData.getFromLevel(level);
+        LevelTransactionChunksSD chunkTransactions = LevelTransactionChunksSD.getFromLevel(level);
 
-        if (!chunkTransactions.watchlist.contains(chunkPos))
-            if (chunkTransactions.watchlist.add(chunkPos))
-                chunkTransactions.setDirty();
+        if (chunkTransactions.watchlist.add(chunkPos))
+            chunkTransactions.setDirty();
     }
 
     // TODO: Adjust NBT data for levels and blockentities to be easier to modify(!)
-
-    /**
-     * SD for all chunks that should be watched for transactions.
-     */
-    public static class ChunkTransactionsSavedData extends SavedData {
-        public static final String NBT_FILENAME = "roehrchen_chunk_transactions";
-        public static final SavedData.Factory<ChunkTransactionsSavedData> FACTORY =
-                new SavedData.Factory<>(ChunkTransactionsSavedData::create, ChunkTransactionsSavedData::load);
-
-        public HashSet<ChunkPos> watchlist = new HashSet<>();
-
-        public static ChunkTransactionsSavedData getFromLevel(Level level) {
-
-            if (level instanceof ServerLevel serverLevel)
-                return serverLevel.getDataStorage().computeIfAbsent(FACTORY, NBT_FILENAME);
-            else
-                return new ChunkTransactionsSavedData();
-            //return CLIENT_DATA.computeIfAbsent(level.dimension(), l -> new TravelTargetSavedData());
-            // TODO: Track transactions on client too
-        }
-
-        @Override
-        public @NotNull CompoundTag save(@NotNull CompoundTag compoundTag, HolderLookup.@NotNull Provider provider) {
-            for (ChunkPos chunkPos : watchlist) {
-                int[] coordinates = {chunkPos.x, chunkPos.z};
-                compoundTag.putIntArray(String.valueOf(chunkPos.hashCode()), coordinates);
-            }
-
-            return compoundTag;
-        }
-
-        public static ChunkTransactionsSavedData load(CompoundTag compoundTag, HolderLookup.Provider lookupProvider) {
-            ChunkTransactionsSavedData data = create();
-
-            for (String key : compoundTag.getAllKeys()) {
-                int[] coordinates = compoundTag.getIntArray(key);
-
-                if (coordinates.length == 2) {
-                    ChunkPos chunkPos = new ChunkPos(coordinates[0], coordinates[1]);
-
-                    if (!String.valueOf(chunkPos.hashCode()).equals(key))
-                        LOGGER.warn("Data of {} seems to have invalid sections (Chunk [{},{}] do not match the hashcode).",
-                                NBT_FILENAME, coordinates[0], coordinates[1]);
-
-                    data.watchlist.add(chunkPos);
-                }
-            }
-
-            return data;
-        }
-
-        public static ChunkTransactionsSavedData create() {
-            return new ChunkTransactionsSavedData();
-        }
-    }
 }

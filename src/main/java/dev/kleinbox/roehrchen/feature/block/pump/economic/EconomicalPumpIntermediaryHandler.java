@@ -2,7 +2,7 @@ package dev.kleinbox.roehrchen.feature.block.pump.economic;
 
 import dev.kleinbox.roehrchen.api.Transaction;
 import dev.kleinbox.roehrchen.api.TransactionHandler;
-import dev.kleinbox.roehrchen.core.tracker.transaction.ItemTransaction;
+import dev.kleinbox.roehrchen.core.transaction.ItemTransaction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
