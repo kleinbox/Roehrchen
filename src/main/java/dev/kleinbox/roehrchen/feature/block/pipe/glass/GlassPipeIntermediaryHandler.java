@@ -39,12 +39,12 @@ public class GlassPipeIntermediaryHandler implements TransactionHandler {
 
     @Override
     public Direction next(Transaction<?, ?> transaction) {
-        BlockPos blockPos = transaction.getBlockPos();
+        BlockPos blockPos = transaction.blockPos;
         BlockState blockState = level.getBlockState(blockPos);
         GlassPipeBlock block = (GlassPipeBlock) blockState.getBlock();
 
         Pair<Direction, Direction> connectors = block.getConnectors(blockState);
-        Direction origin = transaction.getOrigin();
+        Direction origin = transaction.origin;
 
         if (origin == connectors.getFirst())
             return connectors.getSecond();

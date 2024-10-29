@@ -16,6 +16,17 @@ import static dev.kleinbox.roehrchen.Roehrchen.MOD_ID;
 
 public class ItemTransaction extends Transaction<ItemStack, ItemTransaction> {
 
+    public ItemTransaction(ItemStack item, Direction origin, BlockPos blockPos, boolean leaving) {
+        this.product = item;
+        this.origin = origin;
+        this.blockPos = blockPos;
+        this.leaving = leaving;
+    }
+
+    public ItemTransaction() {
+
+    }
+
     @Override
     @Nullable
     public ItemTransaction with(Object product, Direction origin, BlockPos blockPos, boolean leaving) {
@@ -35,11 +46,11 @@ public class ItemTransaction extends Transaction<ItemStack, ItemTransaction> {
     public boolean unwind(Level level) {
         IItemHandler capability = level.getCapability(
                 Capabilities.ItemHandler.BLOCK,
-                getBlockPos(),
-                getOrigin()
+                this.blockPos,
+                this.origin
         );
 
-        ItemStack item = getProduct();
+        ItemStack item = this.product;
 
         if (capability == null) {
             terminate(level);
@@ -62,8 +73,8 @@ public class ItemTransaction extends Transaction<ItemStack, ItemTransaction> {
 
     @Override
     public void terminate(Level level) {
-        ItemStack item = getProduct();
-        BlockPos blockPos = getBlockPos();
+        ItemStack item = this.product;
+        BlockPos blockPos = this.blockPos;
 
         ItemEntity itemEntity = new ItemEntity(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), item);
 

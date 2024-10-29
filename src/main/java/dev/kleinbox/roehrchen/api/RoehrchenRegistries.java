@@ -17,7 +17,7 @@ public class RoehrchenRegistries {
             new RegistryBuilder<>(TRANSACTION_REGISTRY_KEY).create();
 
     @SubscribeEvent
-    private static void registerRegistries(NewRegistryEvent event) {
+    public static void registerRegistries(NewRegistryEvent event) {
         event.register(TRANSACTION_REGISTRY);
     }
 }

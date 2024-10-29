@@ -25,8 +25,9 @@ public class Roehrchen {
     public Roehrchen(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
 
-        NeoForge.EVENT_BUS.addListener(RoehrchenRegistries::registerRegistries);
+        modEventBus.addListener(RoehrchenRegistries::registerRegistries);
         Registries.registerToBus(modEventBus);
+        modEventBus.addListener(Registries::registerCapabilities);
         //NeoForge.EVENT_BUS.register(ClientModEvents.class);
 
         TransactionTracker glassPipeNetwork = new TransactionTracker();

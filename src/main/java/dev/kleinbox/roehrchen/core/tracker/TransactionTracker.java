@@ -23,8 +23,6 @@ import java.util.HashSet;
 import static dev.kleinbox.roehrchen.Roehrchen.LOGGER;
 import static dev.kleinbox.roehrchen.Roehrchen.REGISTERED;
 
-// TODO: I should generalize this for all pipes and adjust TravelingItem to an abstract Transaction and make all pipes use it.
-
 /**
  * Keeps track of all pipes that need to be processed in level.
  * We are doing this to save on a bit of performance in case our pipes are being used as decorations (this way, we do

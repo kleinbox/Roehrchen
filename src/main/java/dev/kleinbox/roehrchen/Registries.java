@@ -9,9 +9,13 @@ import dev.kleinbox.roehrchen.core.Register.Registered;
 import dev.kleinbox.roehrchen.core.tracker.transaction.ItemTransaction;
 import dev.kleinbox.roehrchen.feature.block.pipe.glass.GlassPipeBlock;
 import dev.kleinbox.roehrchen.feature.block.pipe.glass.GlassPipeIntermediaryHandler;
+import dev.kleinbox.roehrchen.feature.block.pump.economic.EconomicalPumpBlock;
+import dev.kleinbox.roehrchen.feature.block.pump.economic.EconomicalPumpIntermediaryHandler;
 import dev.kleinbox.roehrchen.feature.item.ComplexBlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -27,9 +31,13 @@ public class Registries {
     private static final DeferredRegister<Transaction<?, ?>> TRANSACTIONS = DeferredRegister.create(RoehrchenRegistries.TRANSACTION_REGISTRY, MOD_ID);
     private static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, MOD_ID);
 
+    // Core
     public final Supplier<ItemTransaction> ITEM_TRANSACTION;
     public final Supplier<AttachmentType<HashSet<Transaction<?,?>>>> WATCHED_GLASS_PIPES;
+
+    // Feature
     public final Registered GLASS_PIPE;
+    public final Registered ECONOMICAL_PUMP;
 
     public Registries() {
         this.ITEM_TRANSACTION = TRANSACTIONS.register(
@@ -48,13 +56,24 @@ public class Registries {
                 .block(GlassPipeBlock::new)
                 .item((block) -> new ComplexBlockItem<>(block, new Item.Properties()))
                 .build();
+
+        this.ECONOMICAL_PUMP = new Register("economical_pump")
+                .block(EconomicalPumpBlock::new)
+                .item((block) -> new ComplexBlockItem<>(block, new Item.Properties()))
+                .build();
     }
 
+    @SubscribeEvent
     protected static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlock(
                 TransactionHandler.TRANSACTION_HANDLER_BLOCK,
-                (level, pos, state, be, side) -> GlassPipeIntermediaryHandler.create(level, pos, state, side)
-
+                (level, pos, state, be, side) -> GlassPipeIntermediaryHandler.create(level, pos, state, side),
+                Roehrchen.REGISTERED.GLASS_PIPE.getBlock()
+        );
+        event.registerBlock(
+                TransactionHandler.TRANSACTION_HANDLER_BLOCK,
+                (level, pos, state, be, side) -> EconomicalPumpIntermediaryHandler.create(level, pos, state, side),
+                Roehrchen.REGISTERED.ECONOMICAL_PUMP.getBlock()
         );
     }
 

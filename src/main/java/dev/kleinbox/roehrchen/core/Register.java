@@ -1,8 +1,11 @@
 package dev.kleinbox.roehrchen.core;
 
+import dev.kleinbox.roehrchen.Roehrchen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.jetbrains.annotations.Nullable;
@@ -14,16 +17,19 @@ import static dev.kleinbox.roehrchen.Roehrchen.MOD_ID;
 
 public class Register {
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(BuiltInRegistries.BLOCK, MOD_ID);
+    private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPE = DeferredRegister.create(BuiltInRegistries.BLOCK_ENTITY_TYPE, MOD_ID);
     private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(BuiltInRegistries.ITEM, MOD_ID);
 
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);
+        BLOCK_ENTITY_TYPE.register(modEventBus);
         ITEMS.register(modEventBus);
     }
 
     private final String name;
 
     private Supplier<Block> blockSupplier = () -> null;
+    private Supplier<BlockEntityType<?>> blockEntitySupplier = () -> null;
     private Supplier<Item> itemSupplier = () -> null;
 
     public Register(String name) {
@@ -35,6 +41,11 @@ public class Register {
         return this;
     }
 
+    public Register blockEntity(Function<@Nullable Block, BlockEntityType<?>> supplier) {
+        this.blockEntitySupplier = BLOCK_ENTITY_TYPE.register(name, () -> supplier.apply(this.blockSupplier.get()));
+        return this;
+    }
+
     public Register item(Function<@Nullable Block, Item> supplier) {
         itemSupplier = ITEMS.register(name, () -> supplier.apply(this.blockSupplier.get()));
         return this;
@@ -43,6 +54,7 @@ public class Register {
     public Registered build() {
         return new Registered(
                 blockSupplier,
+                blockEntitySupplier,
                 itemSupplier);
     }
 
@@ -51,34 +63,49 @@ public class Register {
      */
     public static class Registered {
         private final Supplier<Block> blockSupplier;
+        private final Supplier<BlockEntityType<?>> blockEntitySupplier ;
         private final Supplier<Item> itemSupplier;
 
         public Registered(@Nullable Supplier<Block> blockSupplier,
+                          @Nullable Supplier<BlockEntityType<?>> blockEntitySupplier,
                           @Nullable Supplier<Item> itemSupplier) {
             this.blockSupplier = blockSupplier;
+            this.blockEntitySupplier = blockEntitySupplier;
             this.itemSupplier = itemSupplier;
         }
 
         /**
          * Returns the block of this feature.
-         *
-         * @throws IllegalAccessException Caused if this feature does not have a block registered.
          */
-        public Block getBlock() throws IllegalAccessException {
-            if (blockSupplier == null)
-                throw new IllegalAccessException("No block has been registered");
+        public Block getBlock() {
+            if (blockSupplier == null) {
+                Roehrchen.LOGGER.error("Illegal access to block that has not been registered!");
+                return null;
+            }
 
             return blockSupplier.get();
         }
 
         /**
-         * Returns the item of this feature.
-         *
-         * @throws IllegalAccessException Caused if this feature does not have an item registered.
+         * Returns the blockEntityType of this feature.
          */
-        public Item getItem() throws IllegalAccessException {
-            if (itemSupplier == null)
-                throw new IllegalAccessException("No item has been registered");
+        public BlockEntityType<?> getBlockEntityType() {
+            if (blockEntitySupplier == null) {
+                Roehrchen.LOGGER.error("Illegal access to blockEntityType that has not been registered!");
+                return null;
+            }
+
+            return blockEntitySupplier.get();
+        }
+
+        /**
+         * Returns the item of this feature.
+         */
+        public Item getItem() {
+            if (itemSupplier == null) {
+                Roehrchen.LOGGER.error("Illegal access to item that has not been registered!");
+                return null;
+            }
 
             return itemSupplier.get();
         }

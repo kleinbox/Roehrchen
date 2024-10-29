@@ -12,7 +12,6 @@ import org.jetbrains.annotations.NotNull;
 
 public class GlassPipeBlock extends GenericPipeBlock {
     public static final Properties PROPERTIES = Properties.of()
-            .pushReaction(PushReaction.DESTROY)
             .noOcclusion()
             .isValidSpawn(Blocks::never)
             .isRedstoneConductor((state, level, pos) -> false)
