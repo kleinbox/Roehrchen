@@ -1,7 +1,8 @@
 package dev.kleinbox.roehrchen.feature.block.pump.economic;
 
-import dev.kleinbox.roehrchen.core.transaction.tracker.TransactionTracker;
-import dev.kleinbox.roehrchen.core.transaction.ItemTransaction;
+import dev.kleinbox.roehrchen.Roehrchen;
+import dev.kleinbox.roehrchen.core.tracker.TransactionTracker;
+import dev.kleinbox.roehrchen.feature.transaction.ItemTransaction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -39,6 +40,9 @@ public class EconomicalPumpBlock extends Block {
                         @NotNull RandomSource random) {
         super.tick(state, level, pos, random);
 
+        if (level.isClientSide)
+            return;
+
         Direction front = state.getValue(BlockStateProperties.FACING);
         Direction back = front.getOpposite();
 
@@ -66,10 +70,10 @@ public class EconomicalPumpBlock extends Block {
                 }
             }
 
-            if (!item.isEmpty())
-                TransactionTracker.registerTransaction(level, new ItemTransaction(
-                        item, front, pos, false
-                ));
+            if (!item.isEmpty()) {
+                Roehrchen.LOGGER.debug("Now sending {}", item);
+                TransactionTracker.registerTransaction(level, new ItemTransaction(item, front, pos));
+            }
         }
 
         level.scheduleTick(pos, this, COOLDOWN);

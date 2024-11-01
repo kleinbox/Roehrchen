@@ -3,7 +3,7 @@ package dev.kleinbox.roehrchen;
 import com.mojang.logging.LogUtils;
 import dev.kleinbox.roehrchen.api.RoehrchenRegistries;
 import dev.kleinbox.roehrchen.core.Config;
-import dev.kleinbox.roehrchen.core.transaction.tracker.TransactionTracker;
+import dev.kleinbox.roehrchen.core.tracker.TransactionTracker;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;

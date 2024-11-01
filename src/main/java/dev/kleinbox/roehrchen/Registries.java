@@ -2,25 +2,34 @@ package dev.kleinbox.roehrchen;
 
 import dev.kleinbox.roehrchen.api.RoehrchenRegistries;
 import dev.kleinbox.roehrchen.api.Transaction;
-import dev.kleinbox.roehrchen.api.TransactionHandler;
+import dev.kleinbox.roehrchen.api.TransactionConsumerHandler;
+import dev.kleinbox.roehrchen.api.TransactionRedirectHandler;
 import dev.kleinbox.roehrchen.core.Register;
 import dev.kleinbox.roehrchen.core.Register.Registered;
-import dev.kleinbox.roehrchen.core.transaction.ItemTransaction;
-import dev.kleinbox.roehrchen.core.transaction.tracker.ChunkTransactionsAttachment;
+import dev.kleinbox.roehrchen.core.payload.ChunkTransactionsPayload;
+import dev.kleinbox.roehrchen.feature.block.distribution.splitter.SplitterBlock;
+import dev.kleinbox.roehrchen.feature.block.distribution.splitter.SplitterBlockEntity;
+import dev.kleinbox.roehrchen.feature.block.distribution.splitter.SplitterTransactionConsumer;
+import dev.kleinbox.roehrchen.feature.transaction.ItemTransaction;
+import dev.kleinbox.roehrchen.core.tracker.ChunkTransactionsAttachment;
+import dev.kleinbox.roehrchen.feature.block.distribution.merger.MergerBlock;
+import dev.kleinbox.roehrchen.feature.block.distribution.merger.MergerTransactionRedirect;
 import dev.kleinbox.roehrchen.feature.block.pipe.glass.GlassPipeBlock;
-import dev.kleinbox.roehrchen.feature.block.pipe.glass.GlassPipeIntermediaryHandler;
+import dev.kleinbox.roehrchen.feature.block.pipe.glass.GlassPipeTransactionRedirect;
 import dev.kleinbox.roehrchen.feature.block.pump.economic.EconomicalPumpBlock;
-import dev.kleinbox.roehrchen.feature.block.pump.economic.EconomicalPumpIntermediaryHandler;
+import dev.kleinbox.roehrchen.feature.block.pump.economic.EconomicalPumpIntermediaryRedirect;
 import dev.kleinbox.roehrchen.feature.item.ComplexBlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
-import java.util.HashSet;
 import java.util.function.Supplier;
 
 import static dev.kleinbox.roehrchen.Roehrchen.MOD_ID;
@@ -36,6 +45,8 @@ public class Registries {
     // Feature
     public final Registered GLASS_PIPE;
     public final Registered ECONOMICAL_PUMP;
+    public final Registered MERGER;
+    public final Registered SPLITTER;
 
     public Registries() {
         this.ITEM_TRANSACTION = TRANSACTIONS.register(
@@ -57,19 +68,56 @@ public class Registries {
                 .block(EconomicalPumpBlock::new)
                 .item((block) -> new ComplexBlockItem<>(block, new Item.Properties()))
                 .build();
+
+        this.MERGER = new Register("merger")
+                .block(MergerBlock::new)
+                .item((block) -> new ComplexBlockItem<>(block, new Item.Properties()))
+                .build();
+
+        //noinspection DataFlowIssue
+        this.SPLITTER = new Register("splitter")
+                .block(SplitterBlock::new)
+                .blockEntity((block) -> BlockEntityType.Builder.of(
+                        SplitterBlockEntity::new,
+                        block
+                        ).build(null)
+                )
+                .item((block) -> new ComplexBlockItem<>(block, new Item.Properties()))
+                .build();
     }
 
     @SubscribeEvent
     protected static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlock(
-                TransactionHandler.TRANSACTION_HANDLER_BLOCK,
-                (level, pos, state, be, side) -> GlassPipeIntermediaryHandler.create(level, pos, state, side),
+                TransactionRedirectHandler.TRANSACTION_REDIRECT_HANDLER,
+                (level, pos, state, be, side) -> GlassPipeTransactionRedirect.create(level, pos, state, side),
                 Roehrchen.REGISTERED.GLASS_PIPE.getBlock()
         );
         event.registerBlock(
-                TransactionHandler.TRANSACTION_HANDLER_BLOCK,
-                (level, pos, state, be, side) -> EconomicalPumpIntermediaryHandler.create(level, pos, state, side),
+                TransactionRedirectHandler.TRANSACTION_REDIRECT_HANDLER,
+                (level, pos, state, be, side) -> EconomicalPumpIntermediaryRedirect.create(level, pos, state, side),
                 Roehrchen.REGISTERED.ECONOMICAL_PUMP.getBlock()
+        );
+        event.registerBlock(
+                TransactionRedirectHandler.TRANSACTION_REDIRECT_HANDLER,
+                (level, pos, state, be, side) -> MergerTransactionRedirect.create(level, pos, state, side),
+                Roehrchen.REGISTERED.MERGER.getBlock()
+        );
+        event.registerBlockEntity(
+                TransactionConsumerHandler.TRANSACTION_CONSUME_HANDLER,
+                Roehrchen.REGISTERED.SPLITTER.getBlockEntityType(),
+                SplitterTransactionConsumer::create
+        );
+    }
+
+    @SubscribeEvent
+    protected static void registerPayloads(final RegisterPayloadHandlersEvent event) {
+        final PayloadRegistrar register = event.registrar("1");
+
+        register.playToClient(
+                ChunkTransactionsPayload.TYPE,
+                ChunkTransactionsPayload.STREAM_CODEC,
+                ChunkTransactionsPayload::handleDataOnMain
         );
     }
 

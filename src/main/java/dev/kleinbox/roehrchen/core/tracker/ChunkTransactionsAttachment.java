@@ -1,4 +1,4 @@
-package dev.kleinbox.roehrchen.core.transaction.tracker;
+package dev.kleinbox.roehrchen.core.tracker;
 
 import dev.kleinbox.roehrchen.Roehrchen;
 import dev.kleinbox.roehrchen.api.RoehrchenRegistries;
@@ -53,7 +53,7 @@ public class ChunkTransactionsAttachment implements INBTSerializable<ListTag>, I
     public void deserializeNBT(HolderLookup.@NotNull Provider provider, @NotNull ListTag tags) {
         transactions = new HashSet<>();
 
-        for (int i = 0; i < tags.size(); i++) {
+        for (int i=0; i < tags.size(); i++) {
             CompoundTag compoundTag = tags.getCompound(i);
             ResourceLocation type = ResourceLocation.tryParse(compoundTag.getString("type"));
 

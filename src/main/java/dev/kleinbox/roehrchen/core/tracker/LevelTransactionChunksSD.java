@@ -1,4 +1,4 @@
-package dev.kleinbox.roehrchen.core.transaction.tracker;
+package dev.kleinbox.roehrchen.core.tracker;
 
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -9,11 +9,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
-import dev.kleinbox.roehrchen.Roehrchen;
-
 import java.util.HashSet;
-
-import static dev.kleinbox.roehrchen.Roehrchen.LOGGER;
 
 /**
  * SD for all chunks that should be watched for transactions.
@@ -24,15 +20,13 @@ public class LevelTransactionChunksSD extends SavedData {
             new SavedData.Factory<>(LevelTransactionChunksSD::create, LevelTransactionChunksSD::load);
 
     public HashSet<ChunkPos> watchlist = new HashSet<>();
+    public int cooldown = 0;
 
     public static LevelTransactionChunksSD getFromLevel(Level level) {
-
         if (level instanceof ServerLevel serverLevel)
             return serverLevel.getDataStorage().computeIfAbsent(FACTORY, NBT_FILENAME);
         else
             return new LevelTransactionChunksSD();
-        //return CLIENT_DATA.computeIfAbsent(level.dimension(), l -> new TravelTargetSavedData());
-        // TODO: Track transactions on client too?
     }
 
     @Override

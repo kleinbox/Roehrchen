@@ -1,26 +1,23 @@
-package dev.kleinbox.roehrchen.core.transaction.tracker;
+package dev.kleinbox.roehrchen.core.tracker;
 
 import com.mojang.datafixers.util.Pair;
 import dev.kleinbox.roehrchen.api.Transaction;
-import dev.kleinbox.roehrchen.api.TransactionHandler;
+import dev.kleinbox.roehrchen.api.TransactionConsumerHandler;
+import dev.kleinbox.roehrchen.api.TransactionRedirectHandler;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.saveddata.SavedData;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
+import net.neoforged.neoforge.event.level.ChunkWatchEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 
-import static dev.kleinbox.roehrchen.Roehrchen.LOGGER;
 import static dev.kleinbox.roehrchen.Roehrchen.REGISTERED;
 
 /**
@@ -31,63 +28,78 @@ import static dev.kleinbox.roehrchen.Roehrchen.REGISTERED;
  * <p>It only is a small performance boost, though.</p>
  */
 public class TransactionTracker {
+
+    public static final int MAX_COOLDOWN = 20; // TODO: Make it take longer
+
     @SubscribeEvent
     public void onLevelTick(LevelTickEvent.Post event) {
         Level level = event.getLevel();
+        if (level.isClientSide)
+            return;
 
         ArrayList<Pair<Transaction<?,?>, LevelChunk>> relocate = new ArrayList<>();
         ArrayList<ChunkPos> removedChunks = new ArrayList<>();
 
         LevelTransactionChunksSD chunkTransactions = LevelTransactionChunksSD.getFromLevel(level);
+        chunkTransactions.setDirty();
+
+        if (chunkTransactions.cooldown > 0) {
+            chunkTransactions.cooldown--;
+            return;
+        }
+
+        chunkTransactions.cooldown = 1;//MAX_COOLDOWN;
+
         for (ChunkPos chunkPos : chunkTransactions.watchlist) {
             // Check each chunk
             LevelChunk chunk = level.getChunk(chunkPos.x, chunkPos.z);
             ChunkTransactionsAttachment transactions = chunk.getData(REGISTERED.CHUNK_TRANSACTIONS);
             
             ArrayList<Transaction<?, ?>> removedTransactions = new ArrayList<>();
-            
+
+            // Fix java.util.ConcurrentModificationException: null
             for (Transaction<?, ?> transaction : transactions) {
                 // Check each transaction in chunk
-                TransactionHandler capability = level.getCapability(
-                        TransactionHandler.TRANSACTION_HANDLER_BLOCK,
+                chunk.setUnsaved(true);
+
+                // Redirect transaction
+                TransactionRedirectHandler capability_redirect = level.getCapability(
+                        TransactionRedirectHandler.TRANSACTION_REDIRECT_HANDLER,
                         transaction.blockPos,
                         null);
 
-                if (capability == null) {
-                    // Transaction reached end
-                    if (!transaction.unwind(level))
-                        transaction.terminate(level);
+                if (capability_redirect != null) {
+                    Direction next = capability_redirect.next(transaction.origin);
 
-                    removedTransactions.add(transaction);
-                } else {
-                    if (!transaction.leaving) {
-                        // Tiny step within same block
-                        transaction.leaving = true;
-                        chunk.setUnsaved(true);
-                        continue;
-                    }
-
-                    Direction next = capability.next(transaction);
-
-                    if (!capability.request(transaction) || next == null) {
-                        // Capability refuses to take the transaction
+                    if (!capability_redirect.request(transaction) || next == null) {
+                        // Capability refuses to take the transaction; Terminate
                         transaction.terminate(level);
                         removedTransactions.add(transaction);
-                        chunk.setUnsaved(true);
-                        continue;
+                    } else {
+                        // Move transaction one step
+                        transaction.origin = next.getOpposite();
+                        transaction.blockPos = transaction.blockPos.relative(next);
+
+                        // Changed chunk
+                        if (level.getChunk(transaction.blockPos) != chunk)
+                            relocate.add(new Pair<>(transaction, chunk));
                     }
+                } else {
+                    // Transaction reached end
 
-                    // Move transaction one step
-                    transaction.origin = next.getOpposite();
-                    transaction.blockPos = transaction.blockPos.relative(next);
-                    transaction.leaving = false;
+                    // Get consumer for transaction
+                    TransactionConsumerHandler capability_consume = level.getCapability(
+                            TransactionConsumerHandler.TRANSACTION_CONSUME_HANDLER,
+                            transaction.blockPos,
+                            null);
 
-                    // Changed chunk
-                    if (level.getChunk(transaction.blockPos) != chunk)
-                        relocate.add(new Pair<>(transaction, chunk));
+                    if (capability_consume == null || !capability_consume.consume(transaction))
+                        // No consumer found, throw it out of the system
+                        if (!transaction.unwind(level))
+                            transaction.terminate(level);
+
+                    removedTransactions.add(transaction);
                 }
-
-                chunk.setUnsaved(true);
             }
             
             for (Transaction<?,?> transaction : removedTransactions) {
@@ -109,8 +121,7 @@ public class TransactionTracker {
             //oldChunk.setUnsaved(true); // We already marked the chunk
 
             if (oldTransactions.isEmpty())
-                if (chunkTransactions.watchlist.remove(oldChunk.getPos()))
-                    chunkTransactions.setDirty();
+                chunkTransactions.watchlist.remove(oldChunk.getPos());
 
             ChunkAccess newChunk = level.getChunk(transaction.blockPos);
             ChunkTransactionsAttachment newTransactions = newChunk.getData(REGISTERED.CHUNK_TRANSACTIONS);
@@ -118,15 +129,12 @@ public class TransactionTracker {
             newChunk.setUnsaved(true); // This one maybe not yet
 
             // Make sure to watch it too now
-            if(chunkTransactions.watchlist.add(newChunk.getPos()))
-                chunkTransactions.setDirty();
+            chunkTransactions.watchlist.add(newChunk.getPos());
         }
         
         // Remove chunks
-        for (ChunkPos chunkPos : removedChunks) {
-        	if (chunkTransactions.watchlist.remove(chunkPos))
-                chunkTransactions.setDirty();
-        }
+        for (ChunkPos chunkPos : removedChunks)
+        	chunkTransactions.watchlist.remove(chunkPos);
     }
 
     /**
@@ -150,7 +158,14 @@ public class TransactionTracker {
             chunkTransactions.setDirty();
     }
 
-    // TODO: ChunkWatchEvent.Send etc. to make clients aware of items
+    /**
+     * Synchronize data towards clients for already existing transactions.
+     *
+     * @param event
+     */
+    public void onPlayerGettingChunk(ChunkWatchEvent.Sent event) {
+
+    }
 
     /**
      * <p>Registers a new transaction in the chunk.</p>

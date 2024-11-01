@@ -3,7 +3,7 @@ package dev.kleinbox.roehrchen.api;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
-import dev.kleinbox.roehrchen.core.transaction.tracker.TransactionTracker;
+import dev.kleinbox.roehrchen.core.tracker.TransactionTracker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -15,6 +15,9 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnknownNullability;
+
+import java.util.ArrayList;
+import java.util.Set;
 
 /**
  * <p>A transaction can be anything that is traveling through the world and has
@@ -45,8 +48,6 @@ public abstract class Transaction<P, T extends Transaction<P, T>> implements INB
     public P product;
     public Direction origin;
     public BlockPos blockPos;
-    public boolean leaving;
-
     /**
      * Used during registration as singleton.
      */
@@ -59,16 +60,14 @@ public abstract class Transaction<P, T extends Transaction<P, T>> implements INB
     public abstract T createEmpty();
 
     /**
-     * Will be called when the transaction reaches
-     * its destination and before the transaction is being dropped.
+     * Gets called when the transaction reaches it's destination.
      *
      * @return Whenever it was successful or not
      */
     public abstract boolean unwind(Level level);
 
     /**
-     * Will be called if the container
-     * it's inside gets moved or destroyed.
+     * Gets called when it's container gets moved or destroyed.
      */
     public abstract void terminate(Level level);
 
@@ -88,7 +87,6 @@ public abstract class Transaction<P, T extends Transaction<P, T>> implements INB
         data.put("product", result.getOrThrow());
         data.putString("origin", origin.toString());
         data.putIntArray("blockPos", new int[]{blockPos.getX(), blockPos.getY(), blockPos.getZ()});
-        data.putBoolean("leaving", leaving);
 
         return data;
     }
@@ -100,6 +98,5 @@ public abstract class Transaction<P, T extends Transaction<P, T>> implements INB
         origin = Direction.byName(data.getString("origin"));
         int[] posArray = data.getIntArray("blockPos");
         blockPos = new BlockPos(posArray[0], posArray[1], posArray[2]);
-        leaving = data.getBoolean("leaving");
     }
 }

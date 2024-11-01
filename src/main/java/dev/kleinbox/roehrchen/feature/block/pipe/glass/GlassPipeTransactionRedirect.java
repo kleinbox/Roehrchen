@@ -2,24 +2,26 @@ package dev.kleinbox.roehrchen.feature.block.pipe.glass;
 
 import com.mojang.datafixers.util.Pair;
 import dev.kleinbox.roehrchen.api.Transaction;
-import dev.kleinbox.roehrchen.api.TransactionHandler;
-import dev.kleinbox.roehrchen.core.transaction.ItemTransaction;
+import dev.kleinbox.roehrchen.api.TransactionRedirectHandler;
+import dev.kleinbox.roehrchen.feature.transaction.ItemTransaction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-public class GlassPipeIntermediaryHandler implements TransactionHandler {
+public class GlassPipeTransactionRedirect implements TransactionRedirectHandler {
 
     private final Level level;
+    private final BlockPos blockPos;
 
-    private GlassPipeIntermediaryHandler(Level level) {
+    private GlassPipeTransactionRedirect(Level level, BlockPos blockPos) {
         this.level = level;
+        this.blockPos = blockPos;
     }
 
     @Nullable
-    public static GlassPipeIntermediaryHandler create(Level level, BlockPos blockPos, BlockState blockSate, @Nullable Direction side) {
+    public static GlassPipeTransactionRedirect create(Level level, BlockPos blockPos, BlockState blockSate, @Nullable Direction side) {
         if (!(blockSate.getBlock() instanceof GlassPipeBlock block))
             return null;
 
@@ -29,7 +31,7 @@ public class GlassPipeIntermediaryHandler implements TransactionHandler {
         if (side != null && !(connectors.getFirst() == side || connectors.getSecond() == side))
             return null;
 
-        return new GlassPipeIntermediaryHandler(level);
+        return new GlassPipeTransactionRedirect(level, blockPos);
     }
 
     @Override
@@ -38,13 +40,11 @@ public class GlassPipeIntermediaryHandler implements TransactionHandler {
     }
 
     @Override
-    public Direction next(Transaction<?, ?> transaction) {
-        BlockPos blockPos = transaction.blockPos;
+    public Direction next(Direction origin) {
         BlockState blockState = level.getBlockState(blockPos);
         GlassPipeBlock block = (GlassPipeBlock) blockState.getBlock();
 
         Pair<Direction, Direction> connectors = block.getConnectors(blockState);
-        Direction origin = transaction.origin;
 
         if (origin == connectors.getFirst())
             return connectors.getSecond();

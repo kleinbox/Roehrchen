@@ -1,6 +1,6 @@
 package dev.kleinbox.roehrchen.api;
 
-import dev.kleinbox.roehrchen.core.transaction.tracker.TransactionTracker;
+import dev.kleinbox.roehrchen.core.tracker.TransactionTracker;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.capabilities.BlockCapability;
@@ -12,11 +12,11 @@ import static dev.kleinbox.roehrchen.Roehrchen.MOD_ID;
  * <p>Blocks implementing this interface will be used by the
  * {@link TransactionTracker}.</p>
  */
-public interface TransactionHandler {
-    BlockCapability<TransactionHandler, @Nullable Direction> TRANSACTION_HANDLER_BLOCK =
+public interface TransactionRedirectHandler {
+    BlockCapability<TransactionRedirectHandler, @Nullable Direction> TRANSACTION_REDIRECT_HANDLER =
             BlockCapability.createSided(
-                    ResourceLocation.fromNamespaceAndPath(MOD_ID, "transaction_handler"),
-                    TransactionHandler.class
+                    ResourceLocation.fromNamespaceAndPath(MOD_ID, "transaction_redirect_handler"),
+                    TransactionRedirectHandler.class
             );
 
     /**
@@ -34,5 +34,5 @@ public interface TransactionHandler {
      * @return The direction relative to this block, or null if no fitting one has been found.
      */
     @Nullable
-    Direction next(Transaction<?, ?> transaction);
+    Direction next(Direction origin);
 }

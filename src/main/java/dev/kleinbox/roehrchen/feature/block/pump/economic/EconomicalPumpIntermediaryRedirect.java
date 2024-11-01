@@ -1,8 +1,8 @@
 package dev.kleinbox.roehrchen.feature.block.pump.economic;
 
 import dev.kleinbox.roehrchen.api.Transaction;
-import dev.kleinbox.roehrchen.api.TransactionHandler;
-import dev.kleinbox.roehrchen.core.transaction.ItemTransaction;
+import dev.kleinbox.roehrchen.api.TransactionRedirectHandler;
+import dev.kleinbox.roehrchen.feature.transaction.ItemTransaction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -10,16 +10,18 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.jetbrains.annotations.Nullable;
 
-public class EconomicalPumpIntermediaryHandler implements TransactionHandler {
+public class EconomicalPumpIntermediaryRedirect implements TransactionRedirectHandler {
 
     private final Level level;
+    private final BlockPos blockPos;
 
-    private EconomicalPumpIntermediaryHandler(Level level) {
+    private EconomicalPumpIntermediaryRedirect(Level level, BlockPos blockPos) {
         this.level = level;
+        this.blockPos = blockPos;
     }
 
     @Nullable
-    public static EconomicalPumpIntermediaryHandler create(Level level, BlockPos blockPos, BlockState blockSate, @Nullable Direction side) {
+    public static EconomicalPumpIntermediaryRedirect create(Level level, BlockPos blockPos, BlockState blockSate, @Nullable Direction side) {
         if (!(blockSate.getBlock() instanceof EconomicalPumpBlock))
             return null;
 
@@ -28,7 +30,7 @@ public class EconomicalPumpIntermediaryHandler implements TransactionHandler {
         if (side != null && side != blockSate.getValue(BlockStateProperties.FACING))
             return null;
 
-        return new EconomicalPumpIntermediaryHandler(level);
+        return new EconomicalPumpIntermediaryRedirect(level, blockPos);
     }
 
     @Override
@@ -37,8 +39,8 @@ public class EconomicalPumpIntermediaryHandler implements TransactionHandler {
     }
 
     @Override
-    public @Nullable Direction next(Transaction<?, ?> transaction) {
-        BlockState blockState = level.getBlockState(transaction.blockPos);
+    public @Nullable Direction next(Direction origin) {
+        BlockState blockState = level.getBlockState(blockPos);
 
         if (blockState.getBlock() instanceof EconomicalPumpBlock)
             return blockState.getValue(BlockStateProperties.FACING);

@@ -1,4 +1,4 @@
-package dev.kleinbox.roehrchen.core.transaction;
+package dev.kleinbox.roehrchen.feature.transaction;
 
 import com.mojang.serialization.Codec;
 import dev.kleinbox.roehrchen.api.Transaction;
@@ -11,15 +11,18 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+
 import static dev.kleinbox.roehrchen.Roehrchen.MOD_ID;
 
 public class ItemTransaction extends Transaction<ItemStack, ItemTransaction> {
 
-    public ItemTransaction(ItemStack item, Direction origin, BlockPos blockPos, boolean leaving) {
+    public ItemTransaction(ItemStack item, Direction origin, BlockPos blockPos) {
         this.product = item;
         this.origin = origin;
         this.blockPos = blockPos;
-        this.leaving = leaving;
     }
 
     public ItemTransaction() { }
