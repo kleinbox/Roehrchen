@@ -225,6 +225,4 @@ public class TransactionTracker {
         if (chunkTransactions.watchlist.add(chunkPos))
             chunkTransactions.setDirty();
     }
-
-    // TODO: Adjust NBT data for levels and blockentities to be easier to modify(!)
 }
