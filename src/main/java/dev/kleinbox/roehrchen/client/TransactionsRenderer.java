@@ -15,6 +15,6 @@ public class TransactionsRenderer {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRIPWIRE_BLOCKS)
             return;
 
-
+        // TODO: Render thing
     }
 }
