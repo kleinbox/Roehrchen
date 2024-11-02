@@ -4,21 +4,22 @@ import dev.kleinbox.roehrchen.api.RoehrchenRegistries;
 import dev.kleinbox.roehrchen.api.Transaction;
 import dev.kleinbox.roehrchen.api.TransactionConsumerHandler;
 import dev.kleinbox.roehrchen.api.TransactionRedirectHandler;
-import dev.kleinbox.roehrchen.core.Register;
-import dev.kleinbox.roehrchen.core.Register.Registered;
-import dev.kleinbox.roehrchen.core.payload.ChunkTransactionsPayload;
-import dev.kleinbox.roehrchen.feature.block.distribution.splitter.SplitterBlock;
-import dev.kleinbox.roehrchen.feature.block.distribution.splitter.SplitterBlockEntity;
-import dev.kleinbox.roehrchen.feature.block.distribution.splitter.SplitterTransactionConsumer;
-import dev.kleinbox.roehrchen.feature.transaction.ItemTransaction;
-import dev.kleinbox.roehrchen.core.tracker.ChunkTransactionsAttachment;
-import dev.kleinbox.roehrchen.feature.block.distribution.merger.MergerBlock;
-import dev.kleinbox.roehrchen.feature.block.distribution.merger.MergerTransactionRedirect;
-import dev.kleinbox.roehrchen.feature.block.pipe.glass.GlassPipeBlock;
-import dev.kleinbox.roehrchen.feature.block.pipe.glass.GlassPipeTransactionRedirect;
-import dev.kleinbox.roehrchen.feature.block.pump.economic.EconomicalPumpBlock;
-import dev.kleinbox.roehrchen.feature.block.pump.economic.EconomicalPumpIntermediaryRedirect;
-import dev.kleinbox.roehrchen.feature.item.ComplexBlockItem;
+import dev.kleinbox.roehrchen.common.core.Register;
+import dev.kleinbox.roehrchen.common.core.Register.Registered;
+import dev.kleinbox.roehrchen.common.core.payload.AnnounceTransactionPayload;
+import dev.kleinbox.roehrchen.common.core.payload.ChunkTransactionsPayload;
+import dev.kleinbox.roehrchen.common.core.tracker.ChunkTransactionsAttachment;
+import dev.kleinbox.roehrchen.common.feature.block.distribution.merger.MergerBlock;
+import dev.kleinbox.roehrchen.common.feature.block.distribution.merger.MergerTransactionRedirect;
+import dev.kleinbox.roehrchen.common.feature.block.distribution.splitter.SplitterBlock;
+import dev.kleinbox.roehrchen.common.feature.block.distribution.splitter.SplitterBlockEntity;
+import dev.kleinbox.roehrchen.common.feature.block.distribution.splitter.SplitterTransactionConsumer;
+import dev.kleinbox.roehrchen.common.feature.block.pipe.glass.GlassPipeBlock;
+import dev.kleinbox.roehrchen.common.feature.block.pipe.glass.GlassPipeTransactionRedirect;
+import dev.kleinbox.roehrchen.common.feature.block.pump.economic.EconomicalPumpBlock;
+import dev.kleinbox.roehrchen.common.feature.block.pump.economic.EconomicalPumpIntermediaryRedirect;
+import dev.kleinbox.roehrchen.common.feature.item.ComplexBlockItem;
+import dev.kleinbox.roehrchen.common.feature.transaction.ItemTransaction;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
@@ -26,6 +27,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.HandlerThread;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
@@ -112,12 +114,19 @@ public class Registries {
 
     @SubscribeEvent
     protected static void registerPayloads(final RegisterPayloadHandlersEvent event) {
-        final PayloadRegistrar register = event.registrar("1");
+        final PayloadRegistrar register = event.registrar("1")
+                        .executesOn(HandlerThread.NETWORK);
 
         register.playToClient(
                 ChunkTransactionsPayload.TYPE,
                 ChunkTransactionsPayload.STREAM_CODEC,
-                ChunkTransactionsPayload::handleDataOnMain
+                ChunkTransactionsPayload::handleClientDataOnMain
+        );
+
+        register.playToClient(
+                AnnounceTransactionPayload.TYPE,
+                AnnounceTransactionPayload.STREAM_CODEC,
+                AnnounceTransactionPayload::handleClientDataOnMain
         );
     }
 

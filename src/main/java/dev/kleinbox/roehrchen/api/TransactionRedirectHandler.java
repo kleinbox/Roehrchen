@@ -1,6 +1,6 @@
 package dev.kleinbox.roehrchen.api;
 
-import dev.kleinbox.roehrchen.core.tracker.TransactionTracker;
+import dev.kleinbox.roehrchen.common.core.tracker.TransactionTracker;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.capabilities.BlockCapability;

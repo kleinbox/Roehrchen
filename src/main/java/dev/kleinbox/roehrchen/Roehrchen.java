@@ -2,8 +2,8 @@ package dev.kleinbox.roehrchen;
 
 import com.mojang.logging.LogUtils;
 import dev.kleinbox.roehrchen.api.RoehrchenRegistries;
-import dev.kleinbox.roehrchen.core.Config;
-import dev.kleinbox.roehrchen.core.tracker.TransactionTracker;
+import dev.kleinbox.roehrchen.common.core.Config;
+import dev.kleinbox.roehrchen.common.core.tracker.TransactionTracker;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -28,6 +28,7 @@ public class Roehrchen {
         modEventBus.addListener(RoehrchenRegistries::registerRegistries);
         Registries.registerToBus(modEventBus);
         modEventBus.addListener(Registries::registerCapabilities);
+        modEventBus.addListener(Registries::registerPayloads);
         //NeoForge.EVENT_BUS.register(ClientModEvents.class);
 
         NeoForge.EVENT_BUS.register(new TransactionTracker());
@@ -37,7 +38,7 @@ public class Roehrchen {
     public static class ClientModEvents {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-            // Some client setup code
+
         }
     }
 }
