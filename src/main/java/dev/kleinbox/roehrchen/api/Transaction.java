@@ -76,8 +76,7 @@ public abstract class Transaction<P, T extends Transaction<P, T>> implements INB
 
     public abstract Codec<P> codec();
 
-    @Override
-    public final @UnknownNullability CompoundTag serializeNBT(HolderLookup.@NotNull Provider provider) {
+    public final CompoundTag toNBT() {
         CompoundTag data = new CompoundTag();
         DataResult<Tag> result = codec().encodeStart(NbtOps.INSTANCE, product);
 
@@ -88,12 +87,21 @@ public abstract class Transaction<P, T extends Transaction<P, T>> implements INB
         return data;
     }
 
-    @Override
-    public final void deserializeNBT(HolderLookup.@NotNull Provider provider, @NotNull CompoundTag data) {
+    public final void fromNBT(@NotNull CompoundTag data) {
         DataResult<Pair<P, Tag>> result = codec().decode(NbtOps.INSTANCE, data.get("product"));
         product = result.getOrThrow().getFirst();
         origin = Direction.byName(data.getString("origin"));
         int[] posArray = data.getIntArray("blockPos");
         blockPos = new BlockPos(posArray[0], posArray[1], posArray[2]);
+    }
+
+    @Override
+    public final @UnknownNullability CompoundTag serializeNBT(HolderLookup.@NotNull Provider provider) {
+        return toNBT();
+    }
+
+    @Override
+    public final void deserializeNBT(HolderLookup.@NotNull Provider provider, @NotNull CompoundTag data) {
+        fromNBT(data);
     }
 }

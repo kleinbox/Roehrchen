@@ -45,8 +45,7 @@ public record ChunkTransactionsPayload(ChunkPos chunkPos, HashSet<Transaction<?,
                 CompoundTag compoundTag = new CompoundTag();
 
                 compoundTag.putString("type", transaction.type().toString());
-                //noinspection DataFlowIssue
-                compoundTag.put("data", transaction.serializeNBT(null));
+                compoundTag.put("data", transaction.toNBT());
 
                 byteBuf.writeNbt(compoundTag);
             }
@@ -78,8 +77,7 @@ public record ChunkTransactionsPayload(ChunkPos chunkPos, HashSet<Transaction<?,
                 }
 
                 Transaction<?, ?> transaction = singleton.createEmpty();
-                //noinspection DataFlowIssue
-                transaction.deserializeNBT(null, compoundTag.getCompound("data"));
+                transaction.fromNBT(compoundTag.getCompound("data"));
 
                 transactions.add(transaction);
             }

@@ -1,9 +1,7 @@
 package dev.kleinbox.roehrchen.common.core.payload;
 
-import dev.kleinbox.roehrchen.Roehrchen;
 import dev.kleinbox.roehrchen.api.RoehrchenRegistries;
 import dev.kleinbox.roehrchen.api.Transaction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -33,7 +31,7 @@ public record AnnounceTransactionPayload(Transaction<?,?> transaction) implement
             Transaction<?, ?> transaction = payload.transaction;
 
             byteBuf.writeResourceLocation(transaction.type());
-            byteBuf.writeNbt(transaction.serializeNBT(null));
+            byteBuf.writeNbt(transaction.toNBT());
         }
 
         @Override
@@ -50,7 +48,7 @@ public record AnnounceTransactionPayload(Transaction<?,?> transaction) implement
                 throw new IllegalStateException("Requested transaction type " + type + " is unregistered");
 
             Transaction<?, ?> transaction = singleton.createEmpty();
-            transaction.deserializeNBT(null, compoundTag);
+            transaction.fromNBT(compoundTag);
 
             return new AnnounceTransactionPayload(transaction);
         }
