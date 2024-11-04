@@ -3,19 +3,24 @@ package dev.kleinbox.roehrchen.common.core.payload;
 import dev.kleinbox.roehrchen.Roehrchen;
 import dev.kleinbox.roehrchen.api.RoehrchenRegistries;
 import dev.kleinbox.roehrchen.api.Transaction;
+import dev.kleinbox.roehrchen.common.core.tracker.ChunkTransactionsAttachment;
+import dev.kleinbox.roehrchen.common.core.tracker.TransactionTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.ChunkAccess;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 
-import static dev.kleinbox.roehrchen.Roehrchen.LOGGER;
 import static dev.kleinbox.roehrchen.Roehrchen.MOD_ID;
+import static dev.kleinbox.roehrchen.Roehrchen.REGISTERED;
 
 /**
  * Synchronises the transactions of a chunk with a player client.
@@ -27,8 +32,15 @@ public record ChunkTransactionsPayload(ChunkPos chunkPos, HashSet<Transaction<?,
 
     public static void handleClientDataOnMain(final ChunkTransactionsPayload payload, final IPayloadContext context) {
         context.enqueueWork(() -> {
-            LOGGER.debug("Syncing new chunk with transactions");
-            // Do something with the data, on the main thread
+            Minecraft instance = Minecraft.getInstance();
+            ClientLevel level = instance.level;
+            if (level == null)
+                return;
+
+            ChunkAccess chunk = level.getChunk(payload.chunkPos.x, payload.chunkPos.z);
+            chunk.setData(REGISTERED.CHUNK_TRANSACTIONS, ChunkTransactionsAttachment.fromRaw(payload.transactions));
+
+            TransactionTracker.makeLevelAwareOfChunk(chunk);
         });
     }
 

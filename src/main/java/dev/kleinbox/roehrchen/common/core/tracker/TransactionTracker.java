@@ -6,6 +6,7 @@ import dev.kleinbox.roehrchen.api.TransactionConsumerHandler;
 import dev.kleinbox.roehrchen.api.TransactionRedirectHandler;
 import dev.kleinbox.roehrchen.common.core.payload.AnnounceTransactionPayload;
 import dev.kleinbox.roehrchen.common.core.payload.ChunkTransactionsPayload;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
@@ -36,8 +37,6 @@ public class TransactionTracker {
     @SubscribeEvent
     public void onLevelTick(LevelTickEvent.Post event) {
         Level level = event.getLevel();
-        if (level.isClientSide)
-            return;
 
         ArrayList<Pair<Transaction<?,?>, LevelChunk>> relocate = new ArrayList<>();
         ArrayList<ChunkPos> removedChunks = new ArrayList<>();
@@ -50,67 +49,33 @@ public class TransactionTracker {
             return;
         }
 
-        chunkTransactions.cooldown = 1;//MAX_COOLDOWN;
+        chunkTransactions.cooldown = MAX_COOLDOWN;
 
-        for (ChunkPos chunkPos : chunkTransactions.watchlist) {
-            // Check each chunk
-            LevelChunk chunk = level.getChunk(chunkPos.x, chunkPos.z);
-            ChunkTransactionsAttachment transactions = chunk.getData(REGISTERED.CHUNK_TRANSACTIONS);
-            
-            ArrayList<Transaction<?, ?>> removedTransactions = new ArrayList<>();
+        if (level.isClientSide) {
+            Minecraft instance = Minecraft.getInstance();
+            if (instance.player == null)
+                return;
 
-            // Fix java.util.ConcurrentModificationException: null
-            for (Transaction<?, ?> transaction : transactions) {
-                // Check each transaction in chunk
-                chunk.setUnsaved(true);
+            int simulationDistance = instance.options.simulationDistance().get();
+            ChunkPos centerChunkPos = instance.player.chunkPosition();
 
-                // Redirect transaction
-                TransactionRedirectHandler capability_redirect = level.getCapability(
-                        TransactionRedirectHandler.TRANSACTION_REDIRECT_HANDLER,
-                        transaction.blockPos,
-                        null);
+            for (int x = -simulationDistance; x <= simulationDistance; x++) {
+                for (int z = -simulationDistance; z <= simulationDistance; z++) {
+                    ChunkPos chunkPos = new ChunkPos(centerChunkPos.x + x, centerChunkPos.z + z);
 
-                if (capability_redirect != null) {
-                    Direction next = capability_redirect.next(transaction.origin);
+                    LevelChunk chunk = level.getChunk(chunkPos.x, chunkPos.z);
+                    ChunkTransactionsAttachment transactions = chunk.getData(REGISTERED.CHUNK_TRANSACTIONS);
 
-                    if (!capability_redirect.request(transaction) || next == null) {
-                        // Capability refuses to take the transaction; Terminate
-                        transaction.terminate(level);
-                        removedTransactions.add(transaction);
-                    } else {
-                        // Move transaction one step
-                        transaction.origin = next.getOpposite();
-                        transaction.blockPos = transaction.blockPos.relative(next);
-
-                        // Changed chunk
-                        if (level.getChunk(transaction.blockPos) != chunk)
-                            relocate.add(new Pair<>(transaction, chunk));
-                    }
-                } else {
-                    // Transaction reached end
-
-                    // Get consumer for transaction
-                    TransactionConsumerHandler capability_consume = level.getCapability(
-                            TransactionConsumerHandler.TRANSACTION_CONSUME_HANDLER,
-                            transaction.blockPos,
-                            null);
-
-                    if (capability_consume == null || !capability_consume.consume(transaction))
-                        // No consumer found, throw it out of the system
-                        if (!transaction.unwind(level))
-                            transaction.terminate(level);
-
-                    removedTransactions.add(transaction);
+                    logic(level, chunkPos, relocate, removedChunks, transactions);
                 }
             }
-            
-            for (Transaction<?,?> transaction : removedTransactions) {
-            	transactions.remove(transaction);
-            	// We already marked the chunk as unsaved from the loop before
-            }
+        } else {
+            for (ChunkPos chunkPos : chunkTransactions.watchlist) {
+                LevelChunk chunk = level.getChunk(chunkPos.x, chunkPos.z);
+                ChunkTransactionsAttachment transactions = chunk.getData(REGISTERED.CHUNK_TRANSACTIONS);
 
-            if (transactions.isEmpty())
-            	removedChunks.add(chunkPos);
+                logic(level, chunkPos, relocate, removedChunks, transactions);
+            }
         }
 
         // Relocate all transactions that changed chunks
@@ -133,10 +98,71 @@ public class TransactionTracker {
             // Make sure to watch it too now
             chunkTransactions.watchlist.add(newChunk.getPos());
         }
-        
+
         // Remove chunks
         for (ChunkPos chunkPos : removedChunks)
-        	chunkTransactions.watchlist.remove(chunkPos);
+            chunkTransactions.watchlist.remove(chunkPos);
+    }
+
+    private void logic(Level level, ChunkPos chunkPos, ArrayList<Pair<Transaction<?,?>, LevelChunk>> relocate,
+                       ArrayList<ChunkPos> removedChunks, ChunkTransactionsAttachment transactions) {
+            ArrayList<Transaction<?, ?>> removedTransactions = new ArrayList<>();
+
+            // TODO: If somebody notices "java.util.ConcurrentModificationException: null", then maybe fix it
+            for (Transaction<?, ?> transaction : transactions) {
+                // Check each transaction in chunk
+                LevelChunk chunk = level.getChunk(chunkPos.x, chunkPos.z);
+                chunk.setUnsaved(true);
+
+                // Redirect transaction
+                TransactionRedirectHandler capability_redirect = level.getCapability(
+                        TransactionRedirectHandler.TRANSACTION_REDIRECT_HANDLER,
+                        transaction.blockPos,
+                        null);
+
+                if (capability_redirect != null) {
+                    Direction next = capability_redirect.next(transaction.origin);
+
+                    if (!capability_redirect.request(transaction) || next == null) {
+                        // Capability refuses to take the transaction; Terminate
+                        if (!level.isClientSide)
+                            transaction.terminate(level);
+                        removedTransactions.add(transaction);
+                    } else {
+                        // Move transaction one step
+                        transaction.origin = next.getOpposite();
+                        transaction.blockPos = transaction.blockPos.relative(next);
+
+                        // Changed chunk
+                        if (level.getChunk(transaction.blockPos) != chunk)
+                            relocate.add(new Pair<>(transaction, chunk));
+                    }
+                } else {
+                    // Transaction reached end
+
+                    // Get consumer for transaction
+                    TransactionConsumerHandler capability_consume = level.getCapability(
+                            TransactionConsumerHandler.TRANSACTION_CONSUME_HANDLER,
+                            transaction.blockPos,
+                            null);
+
+                    if (capability_consume == null || !capability_consume.consume(transaction))
+                        // No consumer found, throw it out of the system
+                        if (!level.isClientSide)
+                            if (!transaction.unwind(level))
+                                transaction.terminate(level);
+
+                    removedTransactions.add(transaction);
+                }
+            }
+
+            for (Transaction<?,?> transaction : removedTransactions) {
+                transactions.remove(transaction);
+                // We already marked the chunk as unsaved from the loop before
+            }
+
+            if (transactions.isEmpty())
+                removedChunks.add(chunkPos);
     }
 
     /**
@@ -209,7 +235,7 @@ public class TransactionTracker {
      *
      * @param chunk The chunk that needs to be ticked.
      */
-    private static void makeLevelAwareOfChunk(ChunkAccess chunk) {
+    public static void makeLevelAwareOfChunk(ChunkAccess chunk) {
         if (!chunk.hasData(REGISTERED.CHUNK_TRANSACTIONS))
             return;
 

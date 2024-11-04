@@ -18,6 +18,12 @@ public class ChunkTransactionsAttachment implements INBTSerializable<ListTag>, I
 
     private HashSet<Transaction<?,?>> transactions = new HashSet<>();
 
+    public ChunkTransactionsAttachment() { }
+
+    private ChunkTransactionsAttachment(HashSet<Transaction<?, ?>> transactions) {
+        this.transactions = transactions;
+    }
+
     public boolean add(Transaction<?,?> transaction) {
         return transactions.add(transaction);
     }
@@ -32,6 +38,10 @@ public class ChunkTransactionsAttachment implements INBTSerializable<ListTag>, I
             return transactions.iterator().next();
 
         return null;
+    }
+
+    public static ChunkTransactionsAttachment fromRaw(HashSet<Transaction<?,?>> transactions) {
+        return new ChunkTransactionsAttachment(transactions);
     }
 
     public boolean isEmpty() {
@@ -58,7 +68,7 @@ public class ChunkTransactionsAttachment implements INBTSerializable<ListTag>, I
 
             tags.add(compoundTag);
         }
-        
+
         return tags;
     }
 
