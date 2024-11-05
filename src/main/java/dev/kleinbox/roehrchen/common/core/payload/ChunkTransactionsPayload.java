@@ -18,6 +18,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static dev.kleinbox.roehrchen.Roehrchen.MOD_ID;
 import static dev.kleinbox.roehrchen.Roehrchen.REGISTERED;
@@ -28,7 +29,7 @@ import static dev.kleinbox.roehrchen.Roehrchen.REGISTERED;
  * @param chunkPos The chunk to override or extend with the new transactions.
  * @param transactions The transactions this chunk is supposed to have.
  */
-public record ChunkTransactionsPayload(ChunkPos chunkPos, HashSet<Transaction<?, ?>> transactions) implements CustomPacketPayload {
+public record ChunkTransactionsPayload(ChunkPos chunkPos, ConcurrentHashMap<Transaction<?, ?>, Object> transactions) implements CustomPacketPayload {
 
     public static void handleClientDataOnMain(final ChunkTransactionsPayload payload, final IPayloadContext context) {
         context.enqueueWork(() -> {
@@ -53,7 +54,7 @@ public record ChunkTransactionsPayload(ChunkPos chunkPos, HashSet<Transaction<?,
             byteBuf.writeChunkPos(payload.chunkPos);
             byteBuf.writeInt(payload.transactions.size());
 
-            for (Transaction<?, ?> transaction : payload.transactions) {
+            for (Transaction<?, ?> transaction : payload.transactions.keySet()) {
                 CompoundTag compoundTag = new CompoundTag();
 
                 compoundTag.putString("type", transaction.type().toString());
@@ -65,7 +66,7 @@ public record ChunkTransactionsPayload(ChunkPos chunkPos, HashSet<Transaction<?,
 
         @Override
         public @NotNull ChunkTransactionsPayload decode(FriendlyByteBuf byteBuf) {
-            HashSet<Transaction<?,?>> transactions = new HashSet<>();
+            ConcurrentHashMap<Transaction<?,?>, Object> transactions = new ConcurrentHashMap<>();
 
             ChunkPos chunkPos = byteBuf.readChunkPos();
             int size = byteBuf.readInt();
@@ -91,7 +92,7 @@ public record ChunkTransactionsPayload(ChunkPos chunkPos, HashSet<Transaction<?,
                 Transaction<?, ?> transaction = singleton.createEmpty();
                 transaction.fromNBT(compoundTag.getCompound("data"));
 
-                transactions.add(transaction);
+                transactions.put(transaction, ChunkTransactionsAttachment.PRESENT);
             }
 
             return new ChunkTransactionsPayload(chunkPos, transactions);

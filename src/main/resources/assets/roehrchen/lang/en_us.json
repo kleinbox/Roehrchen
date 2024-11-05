@@ -1,3 +1,8 @@
 {
-  "block.roehrchen.glass_pipe": "Glass Pipe"
+  "block.roehrchen.glass_pipe": "Glass Pipe",
+  "block.roehrchen.economical_pump": "Economical Pump",
+  "block.roehrchen.merger": "Merger",
+  "block.roehrchen.splitter": "Splitter",
+
+  "itemGroup.roehrchen.main": "Röhrchen"
 }

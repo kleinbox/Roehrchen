@@ -7,12 +7,14 @@ import dev.kleinbox.roehrchen.common.feature.transaction.ItemTransaction;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
@@ -78,7 +80,7 @@ public class TransactionsRenderer {
                             false,
                             poseStack,
                             bufferSource,
-                            level.getLightEmission(itemTransaction.blockPos),
+                            LightTexture.pack(level.getBrightness(LightLayer.BLOCK, itemTransaction.blockPos), level.getBrightness(LightLayer.SKY, itemTransaction.blockPos)),
                             OverlayTexture.NO_OVERLAY,
                             model);
 

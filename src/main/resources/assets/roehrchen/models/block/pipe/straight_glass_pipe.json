@@ -1,6 +1,5 @@
 {
   "credit": "Sammy L. Koch | Made with Blockbench",
-  "render_type": "cutout",
   "parent": "roehrchen:block/pipe/generic_pipe",
   "textures": {
     "0": "roehrchen:block/pipe/glass_pipe",

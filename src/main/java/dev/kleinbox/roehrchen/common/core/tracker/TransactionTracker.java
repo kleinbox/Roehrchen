@@ -32,7 +32,7 @@ import static dev.kleinbox.roehrchen.Roehrchen.REGISTERED;
  */
 public class TransactionTracker {
 
-    public static final int MAX_COOLDOWN = 20; // TODO: Make it take longer
+    public static final int MAX_COOLDOWN = 20 * 2;
 
     @SubscribeEvent
     public void onLevelTick(LevelTickEvent.Post event) {

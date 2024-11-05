@@ -13,34 +13,40 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ChunkTransactionsAttachment implements INBTSerializable<ListTag>, Iterable<Transaction<?,?>> {
+    public static final Object PRESENT = new Object();
 
-    private HashSet<Transaction<?,?>> transactions = new HashSet<>();
+    private ConcurrentHashMap<Transaction<?,?>, Object> transactions = new ConcurrentHashMap<>();
 
     public ChunkTransactionsAttachment() { }
 
-    private ChunkTransactionsAttachment(HashSet<Transaction<?, ?>> transactions) {
+    private ChunkTransactionsAttachment(ConcurrentHashMap<Transaction<?, ?>, Object> transactions) {
         this.transactions = transactions;
     }
 
     public boolean add(Transaction<?,?> transaction) {
-        return transactions.add(transaction);
+        if (transactions.containsKey(transaction))
+            return false;
+
+        transactions.put(transaction, PRESENT);
+        return true;
     }
 
-    public boolean remove(Transaction<?,?> transaction) {
-        return transactions.remove(transaction);
+    public void remove(Transaction<?,?> transaction) {
+        transactions.remove(transaction);
     }
 
     @Nullable
     public Transaction<?,?> getSingle() {
         if (transactions.size() == 1)
-            return transactions.iterator().next();
+            return transactions.keySet().iterator().next();
 
         return null;
     }
 
-    public static ChunkTransactionsAttachment fromRaw(HashSet<Transaction<?,?>> transactions) {
+    public static ChunkTransactionsAttachment fromRaw(ConcurrentHashMap<Transaction<?,?>, Object> transactions) {
         return new ChunkTransactionsAttachment(transactions);
     }
 
@@ -48,20 +54,20 @@ public class ChunkTransactionsAttachment implements INBTSerializable<ListTag>, I
         return transactions.isEmpty();
     }
 
-    public HashSet<Transaction<?,?>> getTransactions() {
+    public ConcurrentHashMap<Transaction<?,?>, Object> getTransactions() {
         return transactions;
     }
 
     @Override
     public @NotNull Iterator<Transaction<?, ?>> iterator() {
-        return transactions.iterator();
+        return transactions.keySet().iterator();
     }
 
     @Override
     public ListTag serializeNBT(HolderLookup.@NotNull Provider provider) {
         ListTag tags = new ListTag();
 
-        for (Transaction<?, ?> transaction : transactions) {
+        for (Transaction<?, ?> transaction : transactions.keySet()) {
             CompoundTag compoundTag = new CompoundTag();
             compoundTag.putString("type", transaction.type().toString());
             compoundTag.put("data", transaction.serializeNBT(provider));
@@ -74,7 +80,7 @@ public class ChunkTransactionsAttachment implements INBTSerializable<ListTag>, I
 
     @Override
     public void deserializeNBT(HolderLookup.@NotNull Provider provider, @NotNull ListTag tags) {
-        transactions = new HashSet<>();
+        transactions = new ConcurrentHashMap<>();
 
         for (int i=0; i < tags.size(); i++) {
             CompoundTag compoundTag = tags.getCompound(i);
@@ -94,7 +100,7 @@ public class ChunkTransactionsAttachment implements INBTSerializable<ListTag>, I
             Transaction<?, ?> transaction = singleton.createEmpty();
             transaction.deserializeNBT(provider, compoundTag.getCompound("data"));
 
-            transactions.add(transaction);
+            transactions.put(transaction, PRESENT);
         }
     }
 }

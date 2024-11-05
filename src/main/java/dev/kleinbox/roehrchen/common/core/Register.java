@@ -1,14 +1,19 @@
 package dev.kleinbox.roehrchen.common.core;
 
+import dev.kleinbox.roehrchen.Registries;
 import dev.kleinbox.roehrchen.Roehrchen;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -18,11 +23,26 @@ public class Register {
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(BuiltInRegistries.BLOCK, MOD_ID);
     private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPE = DeferredRegister.create(BuiltInRegistries.BLOCK_ENTITY_TYPE, MOD_ID);
     private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(BuiltInRegistries.ITEM, MOD_ID);
+    private static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(BuiltInRegistries.CREATIVE_MODE_TAB, MOD_ID);
+
+    private static final ArrayList<Supplier<Item>> main_tab_content = new ArrayList<>();
+
+    private static final Supplier<CreativeModeTab> ROEHRCHEN_TAB = CREATIVE_MODE_TABS.register("roehrchen", () -> CreativeModeTab.builder()
+            .title(Component.translatable("itemGroup." + MOD_ID + ".main"))
+            .icon(() -> new ItemStack(Roehrchen.REGISTERED.GLASS_PIPE.getItem()))
+            .displayItems((params, output) -> {
+                for (Supplier<Item> item : main_tab_content) {
+                    output.accept(new ItemStack(item.get()));
+                }
+            })
+            .build()
+    );
 
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);
         BLOCK_ENTITY_TYPE.register(modEventBus);
         ITEMS.register(modEventBus);
+        CREATIVE_MODE_TABS.register(modEventBus);
     }
 
     private final String name;
@@ -51,6 +71,8 @@ public class Register {
     }
 
     public Registered build() {
+        main_tab_content.add(itemSupplier);
+
         return new Registered(
                 blockSupplier,
                 blockEntitySupplier,

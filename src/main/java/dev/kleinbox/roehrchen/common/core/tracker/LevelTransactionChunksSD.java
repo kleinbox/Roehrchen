@@ -3,6 +3,7 @@ package dev.kleinbox.roehrchen.common.core.tracker;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -10,6 +11,8 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * SD for all chunks that should be watched for transactions.
@@ -19,6 +22,8 @@ public class LevelTransactionChunksSD extends SavedData {
     public static final SavedData.Factory<LevelTransactionChunksSD> FACTORY =
             new SavedData.Factory<>(LevelTransactionChunksSD::create, LevelTransactionChunksSD::load);
 
+    private static final ConcurrentHashMap<ResourceKey<Level>, LevelTransactionChunksSD> CLIENT_DATA = new ConcurrentHashMap<>();
+
     public HashSet<ChunkPos> watchlist = new HashSet<>();
     public int cooldown = 0;
 
@@ -26,7 +31,7 @@ public class LevelTransactionChunksSD extends SavedData {
         if (level instanceof ServerLevel serverLevel)
             return serverLevel.getDataStorage().computeIfAbsent(FACTORY, NBT_FILENAME);
         else
-            return new LevelTransactionChunksSD();
+            return CLIENT_DATA.computeIfAbsent(level.dimension(), l -> new LevelTransactionChunksSD());
     }
 
     @Override

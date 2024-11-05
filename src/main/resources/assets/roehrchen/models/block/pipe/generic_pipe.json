@@ -1,4 +1,5 @@
 {
+  "render_type": "translucent",
   "display": {
     "thirdperson_righthand": {
       "rotation": [90, 0, 0],
