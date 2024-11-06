@@ -70,7 +70,7 @@ public class TransactionTracker {
                 }
             }
         } else {
-            for (ChunkPos chunkPos : chunkTransactions.watchlist) {
+            for (ChunkPos chunkPos : chunkTransactions.watchlist.keySet()) {
                 LevelChunk chunk = level.getChunk(chunkPos.x, chunkPos.z);
                 ChunkTransactionsAttachment transactions = chunk.getData(REGISTERED.CHUNK_TRANSACTIONS);
 
@@ -96,7 +96,7 @@ public class TransactionTracker {
             newChunk.setUnsaved(true); // This one maybe not yet
 
             // Make sure to watch it too now
-            chunkTransactions.watchlist.add(newChunk.getPos());
+            chunkTransactions.watchlist.put(newChunk.getPos(), LevelTransactionChunksSD.PRESENT);
         }
 
         // Remove chunks
@@ -182,7 +182,7 @@ public class TransactionTracker {
         ChunkAccess chunk = event.getChunk();
         LevelTransactionChunksSD chunkTransactions = LevelTransactionChunksSD.getFromLevel(chunk.getLevel());
 
-        if (chunkTransactions.watchlist.remove(chunk.getPos()))
+        if (chunkTransactions.watchlist.remove(chunk.getPos()) != null)
             chunkTransactions.setDirty();
     }
 
@@ -248,7 +248,7 @@ public class TransactionTracker {
 
         LevelTransactionChunksSD chunkTransactions = LevelTransactionChunksSD.getFromLevel(level);
 
-        if (chunkTransactions.watchlist.add(chunkPos))
+        if (chunkTransactions.watchlist.put(chunkPos, LevelTransactionChunksSD.PRESENT) == null)
             chunkTransactions.setDirty();
     }
 }

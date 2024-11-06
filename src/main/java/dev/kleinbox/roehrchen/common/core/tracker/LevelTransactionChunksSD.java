@@ -18,13 +18,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * SD for all chunks that should be watched for transactions.
  */
 public class LevelTransactionChunksSD extends SavedData {
+    public static final Object PRESENT = new Object();
+
     public static final String NBT_FILENAME = "roehrchen_chunks_with_transactions";
     public static final SavedData.Factory<LevelTransactionChunksSD> FACTORY =
             new SavedData.Factory<>(LevelTransactionChunksSD::create, LevelTransactionChunksSD::load);
 
     private static final ConcurrentHashMap<ResourceKey<Level>, LevelTransactionChunksSD> CLIENT_DATA = new ConcurrentHashMap<>();
 
-    public HashSet<ChunkPos> watchlist = new HashSet<>();
+    public ConcurrentHashMap<ChunkPos, Object> watchlist = new ConcurrentHashMap<>();
     public int cooldown = 0;
 
     public static LevelTransactionChunksSD getFromLevel(Level level) {
@@ -38,7 +40,7 @@ public class LevelTransactionChunksSD extends SavedData {
     public @NotNull CompoundTag save(@NotNull CompoundTag compoundTag, HolderLookup.@NotNull Provider provider) {
         ListTag tags = new ListTag();
 
-        for (ChunkPos chunkPos : watchlist) {
+        for (ChunkPos chunkPos : watchlist.keySet()) {
             CompoundTag coordinates = new CompoundTag();
             coordinates.putInt("x", chunkPos.x);
             coordinates.putInt("z", chunkPos.z);
@@ -60,7 +62,7 @@ public class LevelTransactionChunksSD extends SavedData {
             int z = coordinates.getInt("z");
 
             ChunkPos chunkPos = new ChunkPos(x, z);
-            data.watchlist.add(chunkPos);
+            data.watchlist.put(chunkPos, PRESENT);
         }
 
         return data;

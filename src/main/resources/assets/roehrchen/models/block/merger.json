@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "roehrchen:block/merger/direction-bottom",
+    "east": "roehrchen:block/merger/input",
+    "north": "roehrchen:block/merger/output",
+    "particle": "roehrchen:block/merger/direction",
+    "south": "roehrchen:block/merger/input",
+    "up": "roehrchen:block/merger/direction",
+    "west": "roehrchen:block/merger/input"
+  }
+}

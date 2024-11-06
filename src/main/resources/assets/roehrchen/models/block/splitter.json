@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "roehrchen:block/splitter/direction-bottom",
+    "east": "roehrchen:block/splitter/input",
+    "north": "roehrchen:block/splitter/output",
+    "particle": "roehrchen:block/splitter/direction",
+    "south": "roehrchen:block/splitter/input",
+    "up": "roehrchen:block/splitter/direction",
+    "west": "roehrchen:block/splitter/input"
+  }
+}
