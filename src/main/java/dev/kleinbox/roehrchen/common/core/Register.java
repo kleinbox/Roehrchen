@@ -1,6 +1,5 @@
 package dev.kleinbox.roehrchen.common.core;
 
-import dev.kleinbox.roehrchen.Registries;
 import dev.kleinbox.roehrchen.Roehrchen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;

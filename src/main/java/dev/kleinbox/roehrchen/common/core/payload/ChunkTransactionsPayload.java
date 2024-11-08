@@ -17,7 +17,6 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static dev.kleinbox.roehrchen.Roehrchen.MOD_ID;
