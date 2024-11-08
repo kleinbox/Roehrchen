@@ -151,6 +151,8 @@ public abstract class GenericPipeBlock extends Block {
             List<EnumProperty<Direction>> ends = Arrays.asList(END_1, END_2);
             for (int i = 0; i<=1; i++) {
                 Direction neighborsDirection = neighbor.getValue(ends.get(i));
+                if (neighborsDirection == connectors.getFirst() || neighborsDirection == connectors.getSecond())
+                    break;
 
                 // Checking if the found pipe has a free connector to bend towards us.
                 BlockPos neighborsNeighborPos = getNextPipeFrom(level, neighborPos, neighborsDirection);
@@ -171,11 +173,8 @@ public abstract class GenericPipeBlock extends Block {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        Level level = context.getLevel();
-        BlockPos pos = context.getClickedPos();
-
         // Orientation of this pipe.
-        Direction end_1 = context.getClickedFace();
+        Direction end_1 = context.getNearestLookingDirection();
         Direction end_2 = end_1.getOpposite();
 
         return this.defaultBlockState()
