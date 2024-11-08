@@ -14,6 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
 
 /**
@@ -55,6 +56,17 @@ public abstract class Transaction<P, T extends Transaction<P, T>> implements INB
      * Used during serialization where the class is unknown.
      */
     public abstract T createEmpty();
+
+    /**
+     * Will attempt to create a new transaction out of the block from the world.
+     *
+     * @param level The level where the block lies in.
+     * @param blockPos The block position inside the level.
+     *
+     * @return Returns a new transaction or null, if it cannot create a new one.
+     */
+    @Nullable
+    public abstract T extractFrom(Level level, BlockPos blockPos, Direction origin);
 
     /**
      * Gets called when the transaction reaches it's destination.

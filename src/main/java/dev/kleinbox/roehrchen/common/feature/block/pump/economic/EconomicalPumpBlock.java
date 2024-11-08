@@ -1,5 +1,7 @@
 package dev.kleinbox.roehrchen.common.feature.block.pump.economic;
 
+import dev.kleinbox.roehrchen.api.RoehrchenRegistries;
+import dev.kleinbox.roehrchen.api.Transaction;
 import dev.kleinbox.roehrchen.common.core.tracker.TransactionTracker;
 import dev.kleinbox.roehrchen.common.feature.transaction.ItemTransaction;
 import net.minecraft.core.BlockPos;
@@ -42,35 +44,12 @@ public class EconomicalPumpBlock extends Block {
         if (level.isClientSide)
             return;
 
-        Direction front = state.getValue(BlockStateProperties.FACING);
-        Direction back = front.getOpposite();
+        Direction back = state.getValue(BlockStateProperties.FACING).getOpposite();
 
-        IItemHandler capability = level.getCapability(Capabilities.ItemHandler.BLOCK, pos.relative(back), back);
-        if (capability != null) {
-            ItemStack item = ItemStack.EMPTY;
-
-            for (int slot = 0; slot < capability.getSlots(); slot++) {
-                if (item.isEmpty()) {
-                    item = capability.extractItem(slot, item.getMaxStackSize(), false);
-                    continue;
-                }
-
-                if (item.getCount() >= item.getMaxStackSize())
-                    break;
-
-                ItemStack stackInSlot = capability.getStackInSlot(slot);
-
-                if (stackInSlot.isEmpty())
-                    continue;
-
-                if (ItemStack.isSameItem(item, stackInSlot)) {
-                    ItemStack result = capability.extractItem(slot, item.getMaxStackSize() - item.getCount(), false);
-                    item.setCount(item.getCount() + result.getCount());
-                }
-            }
-
-            if (!item.isEmpty())
-                TransactionTracker.registerTransaction(level, new ItemTransaction(item, front, pos));
+        for (Transaction<?, ?> singleton : RoehrchenRegistries.TRANSACTION_REGISTRY) {
+            Transaction<?, ?> transaction = singleton.extractFrom(level, pos, back);
+            if (transaction != null)
+                TransactionTracker.registerTransaction(level, transaction);
         }
 
         level.scheduleTick(pos, this, COOLDOWN);
