@@ -4,5 +4,13 @@
   "block.roehrchen.merger": "Merger",
   "block.roehrchen.splitter": "Splitter",
 
+  "block.roehrchen.glass_pipe.description": "Determines the flow a transaction has. It's flow can be changed on the go.",
+  "block.roehrchen.economical_pump.description": "Pumps any kind of product from it's back into it's front every 5 seconds without energy, converting it to a transaction.",
+  "block.roehrchen.merger.description": "Merges transactions coming from any of it's three input sides into the output side.",
+  "block.roehrchen.splitter.description": "Redistributes any transaction coming from it's input side into any of it's three output side in Round Robin style.",
+
+  "roehrchen.item.description.full": "▼ §7Hold §8[§fShift§8] §7for details",
+  "roehrchen.item.description.small": "▶ §7Hold §8[§7Shift§8] §7for details",
+
   "itemGroup.roehrchen.main": "Röhrchen"
 }
