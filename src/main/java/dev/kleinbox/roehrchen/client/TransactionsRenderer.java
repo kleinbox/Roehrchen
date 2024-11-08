@@ -9,10 +9,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.entity.ItemEntityRenderer;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -31,7 +31,7 @@ public class TransactionsRenderer {
 
     @SubscribeEvent
     public static void onRenderLevelStageEvent(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES)
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES)
             return;
 
         Minecraft instance = Minecraft.getInstance();
@@ -70,19 +70,23 @@ public class TransactionsRenderer {
                     BlockPos blockPos = transaction.blockPos;
 
                     poseStack.pushPose();
-                    poseStack.translate(blockPos.getX()+0.5- view.x(), blockPos.getY()+0.4- view.y(), blockPos.getZ()+0.5- view.z());
-                    // Rotate here
+                    poseStack.translate(blockPos.getX()+0.5- view.x(), blockPos.getY()+0.5- view.y(), blockPos.getZ()+0.5- view.z());
+                    poseStack.scale(0.4f, 0.4f,0.4f);
 
                     BakedModel model = instance.getItemRenderer().getModel(itemTransaction.product, level, null, 0);
-                    instance.getItemRenderer().render(
-                            itemTransaction.product,
-                            ItemDisplayContext.GROUND,
-                            false,
+
+                    RandomSource randomSource = RandomSource.create(itemTransaction.hashCode());
+
+                    ItemEntityRenderer.renderMultipleFromCount(
+                            instance.getItemRenderer(),
                             poseStack,
                             bufferSource,
                             LightTexture.pack(level.getBrightness(LightLayer.BLOCK, itemTransaction.blockPos), level.getBrightness(LightLayer.SKY, itemTransaction.blockPos)),
-                            OverlayTexture.NO_OVERLAY,
-                            model);
+                            itemTransaction.product,
+                            model,
+                            true,
+                            randomSource
+                    );
 
                     poseStack.popPose();
                 }
