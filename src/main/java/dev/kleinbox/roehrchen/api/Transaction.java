@@ -12,6 +12,8 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,6 +44,11 @@ import org.jetbrains.annotations.UnknownNullability;
  * @param <T> Self reference.
  */
 public abstract class Transaction<P, T extends Transaction<P, T>> implements INBTSerializable<CompoundTag> {
+
+    @OnlyIn(Dist.CLIENT)
+    public BlockPos oldPos = null;
+    @OnlyIn(Dist.CLIENT)
+    public int age = 0;
 
     public P product;
     public Direction origin;

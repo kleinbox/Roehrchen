@@ -1,0 +1,23 @@
+{
+  "multipart": [
+    { "when": { "facing": "north" },
+      "apply": { "model":  "roehrchen:block/economical_pump", "y":  0, "uvlock": false }
+    },
+    { "when": { "facing": "east" },
+      "apply": { "model":  "roehrchen:block/economical_pump", "y":  90, "uvlock": false }
+    },
+    { "when": { "facing": "south" },
+      "apply": { "model":  "roehrchen:block/economical_pump", "y":  180, "uvlock": false }
+    },
+    { "when": { "facing": "west" },
+      "apply": { "model":  "roehrchen:block/economical_pump", "y":  270, "uvlock": false }
+    },
+
+    { "when": { "facing": "up" },
+      "apply": { "model":  "roehrchen:block/economical_pump", "x":  270, "uvlock": false }
+    },
+    { "when": { "facing": "down" },
+      "apply": { "model":  "roehrchen:block/economical_pump", "x":  90, "uvlock": false }
+    }
+  ]
+}

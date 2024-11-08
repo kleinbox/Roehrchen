@@ -66,6 +66,6 @@ public class EconomicalPumpBlock extends Block {
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return this.defaultBlockState()
-                .setValue(BlockStateProperties.FACING, context.getClickedFace());
+                .setValue(BlockStateProperties.FACING, context.getNearestLookingDirection().getOpposite());
     }
 }

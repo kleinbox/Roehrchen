@@ -108,7 +108,6 @@ public class TransactionTracker {
                        ArrayList<ChunkPos> removedChunks, ChunkTransactionsAttachment transactions) {
             ArrayList<Transaction<?, ?>> removedTransactions = new ArrayList<>();
 
-            // TODO: If somebody notices "java.util.ConcurrentModificationException: null", then maybe fix it
             for (Transaction<?, ?> transaction : transactions) {
                 // Check each transaction in chunk
                 LevelChunk chunk = level.getChunk(chunkPos.x, chunkPos.z);
@@ -131,6 +130,7 @@ public class TransactionTracker {
                     } else {
                         // Move transaction one step
                         transaction.origin = next.getOpposite();
+                        transaction.oldPos = transaction.blockPos;
                         transaction.blockPos = transaction.blockPos.relative(next);
 
                         // Changed chunk

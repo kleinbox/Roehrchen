@@ -1,6 +1,7 @@
 package dev.kleinbox.roehrchen.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import dev.kleinbox.roehrchen.api.Transaction;
 import dev.kleinbox.roehrchen.common.core.tracker.ChunkTransactionsAttachment;
 import dev.kleinbox.roehrchen.common.feature.transaction.ItemTransaction;
@@ -68,10 +69,14 @@ public class TransactionsRenderer {
                         continue;
 
                     BlockPos blockPos = transaction.blockPos;
+                    transaction.age++;
 
                     poseStack.pushPose();
-                    poseStack.translate(blockPos.getX()+0.5- view.x(), blockPos.getY()+0.5- view.y(), blockPos.getZ()+0.5- view.z());
-                    poseStack.scale(0.4f, 0.4f,0.4f);
+                    poseStack.translate(blockPos.getX()+0.5- view.x(), blockPos.getY()+0.4- view.y(), blockPos.getZ()+0.5- view.z());
+                    poseStack.scale(0.8f, 0.8f,0.8f);
+
+                    float rotation = (transaction.age % 360);
+                    poseStack.rotateAround(Axis.YP.rotationDegrees(rotation), 0F, 0F, 0F);
 
                     BakedModel model = instance.getItemRenderer().getModel(itemTransaction.product, level, null, 0);
 
