@@ -130,7 +130,8 @@ public class TransactionTracker {
                     } else {
                         // Move transaction one step
                         transaction.origin = next.getOpposite();
-                        transaction.oldPos = transaction.blockPos;
+                        if (level.isClientSide)
+                            transaction.oldPos = transaction.blockPos;
                         transaction.blockPos = transaction.blockPos.relative(next);
 
                         // Changed chunk
