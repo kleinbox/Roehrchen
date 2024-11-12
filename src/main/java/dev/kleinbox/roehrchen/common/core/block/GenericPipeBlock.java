@@ -1,6 +1,7 @@
 package dev.kleinbox.roehrchen.common.core.block;
 
 import com.mojang.datafixers.util.Pair;
+import dev.kleinbox.roehrchen.Roehrchen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
@@ -94,32 +95,41 @@ public abstract class GenericPipeBlock extends Block {
     protected @NotNull VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos,
                                            @NotNull CollisionContext context) {
         VoxelShape shape;
+        Axis orientation = getOrientation(state);
 
-        shape = switch (getOrientation(state)) {
-            case X -> Shapes.box(0, 0.25, 0.25, 1, 0.75, 0.75);
-            case Y -> Shapes.box(0.25, 0, 0.25, 0.75, 1, 0.75);
-            case Z -> Shapes.box(0.25, 0.25, 0, 0.75, 0.75, 1);
-            case null -> {
-                VoxelShape corner = Shapes.box(0.21875, 0.21875, 0.21875, 0.78125, 0.78125, 0.78125);
+        // Corner
+        if (orientation == null) {
+            VoxelShape corner = Shapes.box(0.21875, 0.21875, 0.21875, 0.78125, 0.78125, 0.78125);
 
-                for (Direction direction : Arrays.asList(state.getValue(END_1), state.getValue(END_2))) {
-                    VoxelShape part = switch (direction) {
-                        case NORTH -> Shapes.box(0.25, 0.25, 0, 0.75, 0.75, 0.21875);
-                        case EAST -> Shapes.box(0.78125, 0.25, 0.25, 1, 0.75, 0.75);
-                        case SOUTH -> Shapes.box(0.25, 0.25, 0.78125, 0.75, 0.75, 1);
-                        case WEST -> Shapes.box(0, 0.25, 0.25, 0.21875, 0.75, 0.75);
-                        case UP -> Shapes.box(0.25, 0.78125, 0.25, 0.75, 1, 0.75);
-                        case DOWN -> Shapes.box(0.25, 0, 0.25, 0.75, 0.21875, 0.75);
-                    };
+            for (Direction direction : Arrays.asList(state.getValue(END_1), state.getValue(END_2))) {
+                VoxelShape part = switch (direction) {
+                    case NORTH -> Shapes.box(0.25, 0.25, 0, 0.75, 0.75, 0.21875);
+                    case EAST -> Shapes.box(0.78125, 0.25, 0.25, 1, 0.75, 0.75);
+                    case SOUTH -> Shapes.box(0.25, 0.25, 0.78125, 0.75, 0.75, 1);
+                    case WEST -> Shapes.box(0, 0.25, 0.25, 0.21875, 0.75, 0.75);
+                    case UP -> Shapes.box(0.25, 0.78125, 0.25, 0.75, 1, 0.75);
+                    case DOWN -> Shapes.box(0.25, 0, 0.25, 0.75, 0.21875, 0.75);
+                };
 
-                    corner = Shapes.join(corner, part, BooleanOp.OR);
-                }
-
-                yield corner;
+                corner = Shapes.join(corner, part, BooleanOp.OR);
             }
-        };
 
-        return shape;
+            return corner;
+        }
+
+        // Up/Down
+        if (orientation.isVertical())
+            return Shapes.box(0.25, 0, 0.25, 0.75, 1, 0.75);
+
+        if (orientation == Direction.Axis.X)
+            return Shapes.box(0, 0.25, 0.25, 1, 0.75, 0.75);
+
+        if (orientation == Direction.Axis.Z)
+            return Shapes.box(0.25, 0.25, 0, 0.75, 0.75, 1);
+
+        // This should never happen
+        Roehrchen.LOGGER.warn("Pipe at {} has an impossible orientation", pos);
+        return Shapes.box(0.21875, 0.21875, 0.21875, 0.78125, 0.78125, 0.78125);
     }
 
     @Override
